@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+
+# Hardhat files
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Environment variables
+.env
+.env.local
+
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Coverage directory
+coverage/
+*.lcov
+coverage.json
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Editor directories and files
+.vscode
+
+
+# Solidity
+*.abi
+*.bin
+*.bin-runtime
+
+# Build outputs
+build/
+dist/
+out/
+
+# Local development
+.local/
+
+# Theme and customization files
+secureflow-theme.json
+apply-theme.sh
+check-colors.sh
+fix-syntax.sh
+deployed-addresses.json
+.vercel
+
+# Documentation (temporary/development)
+# Keep only production docs in repo
+# *-QUICKSTART.md
+# *-STATUS.md
+# *-SETUP_COMPLETE.md
+
+# Scripts output
+*.log
+
