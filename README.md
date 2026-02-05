@@ -388,3 +388,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 _SecureFlow - Where trust meets technology_
 
 **Version**: 1.0.0 | **Status**: Production Ready ✅
+
+## License
+MIT
