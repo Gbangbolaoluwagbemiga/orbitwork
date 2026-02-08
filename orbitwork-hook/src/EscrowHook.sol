@@ -14,10 +14,7 @@ import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-interface ISecureFlow {
-    function selfVerifiedUsers(address user) external view returns (bool);
-    function reputation(address user) external view returns (uint256);
-}
+
 
 /**
  * @title EscrowHook

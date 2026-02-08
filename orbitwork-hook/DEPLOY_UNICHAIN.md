@@ -24,7 +24,7 @@ Before deploying to Unichain testnet, ensure you have:
 
 ## Step 1: Environment Configuration
 
-Create `.env` file in `secureflow-hook/` directory:
+Create `.env` file in `orbitwork-hook/` directory:
 
 ```bash
 # Copy the example
@@ -42,7 +42,7 @@ ESCROW_CORE=0xYourEscrowCoreAddress
 ## Step 2: Deploy EscrowHook
 
 ```bash
-cd secureflow-hook
+cd orbitwork-hook
 
 # Deploy to Unichain Sepolia
 forge script script/DeployUnichain.s.sol \

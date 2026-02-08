@@ -75,7 +75,7 @@ cd orbitwork
 
 ### 2. Smart Contracts (Foundry)
 ```bash
-cd secureflow-hook
+cd orbitwork-hook
 forge install
 forge build
 forge test
@@ -95,7 +95,7 @@ bun dev
 Run the full test suite to verify hook logic:
 
 ```bash
-cd secureflow-hook
+cd orbitwork-hook
 forge test -vv
 ```
 

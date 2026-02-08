@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { SECUREFLOW_ABI, ORBITWORK_RATINGS_ABI } from "@/lib/web3/abis";
 import { ethers } from "ethers";
 import {
   useNotifications,
@@ -38,6 +38,9 @@ export default function JobsPage() {
   const [proposedTimeline, setProposedTimeline] = useState("");
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState<Record<string, boolean>>({});
+  const [clientRatings, setClientRatings] = useState<
+    Record<string, { average: number; count: number }>
+  >({});
   const [isContractPaused, setIsContractPaused] = useState(false);
   const [ongoingProjectsCount, setOngoingProjectsCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -182,7 +185,7 @@ export default function JobsPage() {
       }
 
       setHasApplied(applicationStatus);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleRefresh = async () => {
@@ -213,10 +216,21 @@ export default function JobsPage() {
       const escrowCount = Number(totalEscrows);
 
       const openJobs: Escrow[] = [];
+      const newClientRatings: Record<string, { average: number; count: number }> =
+        {};
+      const ratingsContract = getContract(
+        CONTRACTS.ORBITWORK_RATINGS,
+        ORBITWORK_RATINGS_ABI
+      );
 
       // Fetch open jobs from the contract
       // Check if there are any escrows created yet (nextEscrowId > 1 means at least one escrow exists)
       if (escrowCount > 1) {
+        const contracts = {
+          ratings: getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI)
+        };
+        const newClientRatings: Record<string, { average: number; count: number }> = {};
+
         for (let i = 1; i < escrowCount; i++) {
           try {
             const escrowSummary = await contract.call("getEscrowSummary", i);
@@ -244,15 +258,15 @@ export default function JobsPage() {
 
                   // Simplified check for boolean or [boolean] result
                   if (typeof hasAppliedResult === 'boolean') {
-                      userHasApplied = hasAppliedResult;
+                    userHasApplied = hasAppliedResult;
                   } else if (Array.isArray(hasAppliedResult) && hasAppliedResult.length > 0) {
-                      userHasApplied = Boolean(hasAppliedResult[0]);
+                    userHasApplied = Boolean(hasAppliedResult[0]);
                   } else if (typeof hasAppliedResult === 'object' && hasAppliedResult !== null) {
-                      // Handle potential Proxy or object wrapper
-                      const val = (hasAppliedResult as any)[0];
-                      userHasApplied = Boolean(val);
+                    // Handle potential Proxy or object wrapper
+                    const val = (hasAppliedResult as any)[0];
+                    userHasApplied = Boolean(val);
                   }
-                  
+
                   // Update the hasApplied state for this job
                   setHasApplied((prev) => ({
                     ...prev,
@@ -263,18 +277,18 @@ export default function JobsPage() {
                   if (!userHasApplied) {
                     try {
                       const applications = await contract.call(
-                          "getApplicationsPage",
-                          i, // escrowId
-                          0, // offset
-                          50 // limit - check first 50
+                        "getApplicationsPage",
+                        i, // escrowId
+                        0, // offset
+                        50 // limit - check first 50
                       );
 
                       if (applications && Array.isArray(applications)) {
                         const userInApplications = applications.some(
                           (app: any) => {
-                             // Handle various application structures
-                             const addr = app.freelancer || (Array.isArray(app) ? app[0] : undefined);
-                             return addr && addr.toLowerCase() === wallet.address?.toLowerCase();
+                            // Handle various application structures
+                            const addr = app.freelancer || (Array.isArray(app) ? app[0] : undefined);
+                            return addr && addr.toLowerCase() === wallet.address?.toLowerCase();
                           }
                         );
 
@@ -327,7 +341,7 @@ export default function JobsPage() {
                   0,
                   Math.round(
                     (Number(escrowSummary[8]) - Number(escrowSummary[10])) /
-                      (24 * 60 * 60)
+                    (24 * 60 * 60)
                   )
                 ), // Convert seconds to days, ensure non-negative and round to nearest day
                 milestones: [], // Would need to fetch milestones separately
@@ -346,6 +360,27 @@ export default function JobsPage() {
                 ...prev,
                 [job.id]: userHasApplied,
               }));
+
+              // Fetch client rating
+              try {
+                if (escrowSummary[0] && contracts.ratings) {
+                  const avg = await contracts.ratings.call(
+                    "getAverageRating",
+                    escrowSummary[0]
+                  );
+                  const count = await contracts.ratings.call(
+                    "getRatingCount",
+                    escrowSummary[0]
+                  );
+                  newClientRatings[i.toString()] = {
+                    average: Number(avg),
+                    count: Number(count),
+                  };
+                }
+              } catch (err) {
+                // Ignore rating fetch errors
+              }
+
             }
           } catch (error) {
             // Skip escrows that don't exist or user doesn't have access to
@@ -356,6 +391,8 @@ export default function JobsPage() {
 
       // Set the actual jobs from the contract
       setJobs(openJobs);
+      setClientRatings(newClientRatings);
+      setClientRatings(newClientRatings);
     } catch (error) {
       toast({
         title: "Failed to load jobs",
@@ -452,11 +489,11 @@ export default function JobsPage() {
               return (
                 freelancerAddress &&
                 freelancerAddress.toLowerCase() ===
-                  wallet.address?.toLowerCase()
+                wallet.address?.toLowerCase()
               );
             });
           }
-        } catch (altError) {}
+        } catch (altError) { }
       }
 
       if (userHasApplied) {
@@ -486,12 +523,12 @@ export default function JobsPage() {
 
       // Wait for transaction confirmation
       if (txHash && typeof window !== 'undefined' && window.ethereum) {
-          const provider = new ethers.BrowserProvider(window.ethereum as any);
-          const receipt = await provider.waitForTransaction(txHash);
-          
-          if (receipt && receipt.status === 0) {
-              throw new Error("Transaction failed on-chain");
-          }
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const receipt = await provider.waitForTransaction(txHash);
+
+        if (receipt && receipt.status === 0) {
+          throw new Error("Transaction failed on-chain");
+        }
       }
 
       toast({
@@ -651,6 +688,8 @@ export default function JobsPage() {
                 isContractPaused={isContractPaused}
                 ongoingProjectsCount={ongoingProjectsCount}
                 onApply={setSelectedJob}
+                clientRating={clientRatings[job.id]?.average || 0}
+                clientRatingCount={clientRatings[job.id]?.count || 0}
               />
             ))
           )}

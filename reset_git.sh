@@ -76,19 +76,19 @@ git add contracts/SecureFlow.sol
 safe_commit "feat(contracts): integrate SecureFlow main contract"
 
 # Commit 14
-git add secureflow-hook/src
+git add orbitwork-hook/src
 safe_commit "feat(hook): implement Uniswap v4 Hook"
 
 # Commit 15
-git add secureflow-hook/script
+git add orbitwork-hook/script
 safe_commit "ops(hook): add deployment scripts"
 
 # Commit 16
-git add secureflow-hook/test
+git add orbitwork-hook/test
 safe_commit "test(hook): add hook validation tests"
 
 # Commit 17
-git add secureflow-hook/foundry.toml secureflow-hook/remappings.txt secureflow-hook/lib 2>/dev/null || true
+git add orbitwork-hook/foundry.toml orbitwork-hook/remappings.txt orbitwork-hook/lib 2>/dev/null || true
 safe_commit "chore(hook): configure Foundry environment"
 
 # Commit 18

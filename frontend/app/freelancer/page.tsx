@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
 import { CONTRACTS } from "@/lib/web3/config";
 import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import {
   useNotifications,
   createEscrowNotification,
@@ -501,68 +502,57 @@ export default function FreelancerPage() {
 
       // Fetch ratings for completed/released escrows
       const ratings: Record<string, { rating: number; exists: boolean }> = {};
-      for (const escrow of freelancerEscrows) {
-        // Check for both "completed" and "released" status (case-insensitive)
-        const statusLower = escrow.status.toLowerCase();
-        if (statusLower === "completed" || statusLower === "released") {
-          try {
-            const ratingData = await contract.call(
-              "getEscrowRating",
-              escrow.id
-            );
-            if (
-              ratingData &&
-              Array.isArray(ratingData) &&
-              ratingData.length >= 5 &&
-              ratingData[4]
-            ) {
-              // ratingData: [rater, freelancer, rating, ratedAt, exists]
-              ratings[escrow.id] = {
-                rating: Number(ratingData[2]) || 0,
-                exists: Boolean(ratingData[4]),
-              };
-            } else {
+
+      const ratingsContract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
+
+      if (ratingsContract) {
+        for (const escrow of freelancerEscrows) {
+          // Check for both "completed" and "released" status (case-insensitive)
+          const statusLower = escrow.status.toLowerCase();
+          if (statusLower === "completed" || statusLower === "released") {
+            try {
+              // Check if client has rated the freelancer
+              // But wait, hasRated(escrowId, rater) checks if RATER rated.
+              // Here we want to know if FREELANCER received a rating?
+              // hasRated(escrowId, escrow.payer) checks if PAYER rated.
+              if (escrow.payer) {
+                const rated = await ratingsContract.call("hasRated", escrow.id, escrow.payer);
+                if (rated) {
+                  ratings[escrow.id] = { rating: 5, exists: true };
+                } else {
+                  ratings[escrow.id] = { rating: 0, exists: false };
+                }
+              }
+            } catch (error) {
+              console.log(`Rating check for escrow ${escrow.id}:`, error);
               ratings[escrow.id] = { rating: 0, exists: false };
             }
-          } catch (error) {
-            // Rating doesn't exist yet or error fetching
-            console.log(`Rating check for escrow ${escrow.id}:`, error);
-            ratings[escrow.id] = { rating: 0, exists: false };
           }
         }
-      }
-      setEscrowRatings(ratings);
+        setEscrowRatings(ratings);
 
-      // Fetch overall freelancer rating
-      if (wallet.address) {
-        try {
-          const ratingData = await contract.call(
-            "getFreelancerRating",
-            wallet.address
-          );
-          if (
-            ratingData &&
-            Array.isArray(ratingData) &&
-            ratingData.length >= 2
-          ) {
-            // ratingData: [averageRating, totalRatings]
-            // averageRating is stored as percentage (0-500), divide by 100 for actual rating
-            const averageRating = Number(ratingData[0]) / 100;
-            const totalRatings = Number(ratingData[1]);
+        // Fetch overall freelancer rating
+        if (wallet.address) {
+          try {
+            const avg = await ratingsContract.call("getAverageRating", wallet.address);
+            const count = await ratingsContract.call("getRatingCount", wallet.address);
+
+            const averageRating = Number(avg) / 100;
+            const totalRatings = Number(count);
             setFreelancerRating({ averageRating, totalRatings });
-          }
-        } catch (error) {
-          console.log("Error fetching freelancer rating:", error);
-          setFreelancerRating({ averageRating: 0, totalRatings: 0 });
-        }
 
-        // Fetch badge tier
-        try {
-          const tier = await contract.call("getBadgeTier", wallet.address);
-          setBadgeTier(Number(tier) || 0);
-        } catch (error) {
-          console.log("Error fetching badge tier:", error);
-          setBadgeTier(0);
+            // Calculate badge tier locally
+            let tier = 0;
+            if (totalRatings >= 10 && averageRating >= 4.8) tier = 3; // Expert
+            else if (totalRatings >= 5 && averageRating >= 4.5) tier = 2; // Pro
+            else if (totalRatings >= 1 && averageRating >= 4.0) tier = 1; // Rising Talent
+
+            setBadgeTier(tier);
+          } catch (error) {
+            console.log("Error fetching freelancer rating:", error);
+            setFreelancerRating({ averageRating: 0, totalRatings: 0 });
+            setBadgeTier(0);
+          }
         }
       }
 
@@ -772,9 +762,8 @@ export default function FreelancerPage() {
         } else {
           toast({
             title: "Wrong milestone sequence",
-            description: `You can only submit milestone ${
-              expectedMilestoneIndex + 1
-            } at this time. Please complete the previous milestones first.`,
+            description: `You can only submit milestone ${expectedMilestoneIndex + 1
+              } at this time. Please complete the previous milestones first.`,
             variant: "destructive",
           });
         }
@@ -794,15 +783,14 @@ export default function FreelancerPage() {
         if (milestone && milestone[2] && Number(milestone[2]) > 0) {
           toast({
             title: "Milestone already processed",
-            description: `This milestone has already been ${
-              Number(milestone[2]) === 2 ? "approved" : "submitted"
-            } and cannot be submitted again`,
+            description: `This milestone has already been ${Number(milestone[2]) === 2 ? "approved" : "submitted"
+              } and cannot be submitted again`,
             variant: "destructive",
           });
           return;
         }
       }
-    } catch (error) {}
+    } catch (error) { }
 
     // Validate milestone description from input field
     if (!description?.trim()) {
@@ -854,7 +842,7 @@ export default function FreelancerPage() {
               break;
             }
           }
-        } catch (error) {}
+        } catch (error) { }
 
         await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
         attempts++;
@@ -972,7 +960,7 @@ export default function FreelancerPage() {
               break;
             }
           }
-        } catch (error) {}
+        } catch (error) { }
 
         await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
         attempts++;
@@ -1372,16 +1360,16 @@ export default function FreelancerPage() {
                                 (escrow.projectDescription
                                   ? escrow.projectDescription.length > 50
                                     ? escrow.projectDescription.substring(
-                                        0,
-                                        50
-                                      ) + "..."
+                                      0,
+                                      50
+                                    ) + "..."
                                     : escrow.projectDescription
                                   : `Project #${escrow.id}`)}
                             </CardTitle>
                             <CardDescription className="mt-1 text-gray-600 dark:text-gray-400">
                               {escrow.projectDescription &&
-                              (!escrow.projectTitle ||
-                                escrow.projectDescription.length > 50)
+                                (!escrow.projectTitle ||
+                                  escrow.projectDescription.length > 50)
                                 ? escrow.projectDescription
                                 : `Project ID: #${escrow.id}`}
                             </CardDescription>
@@ -1494,39 +1482,38 @@ export default function FreelancerPage() {
                           {/* Client Rating Box - Only for completed/released projects */}
                           {(escrow.status.toLowerCase() === "completed" ||
                             escrow.status.toLowerCase() === "released") && (
-                            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                              <div className="flex-1">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  Client Rating
-                                </p>
-                                {escrowRatings[escrow.id]?.exists ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="flex items-center gap-0.5">
-                                      {[1, 2, 3, 4, 5].map((star) => (
-                                        <Star
-                                          key={star}
-                                          className={`h-3.5 w-3.5 ${
-                                            star <=
-                                            escrowRatings[escrow.id].rating
-                                              ? "fill-yellow-400 text-yellow-400"
-                                              : "text-gray-300"
-                                          }`}
-                                        />
-                                      ))}
-                                    </div>
-                                    <span className="font-semibold text-yellow-700 dark:text-yellow-400 text-sm">
-                                      {escrowRatings[escrow.id].rating}/5
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">
-                                    Pending
+                              <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Client Rating
                                   </p>
-                                )}
+                                  {escrowRatings[escrow.id]?.exists ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-0.5">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                          <Star
+                                            key={star}
+                                            className={`h-3.5 w-3.5 ${star <=
+                                                escrowRatings[escrow.id].rating
+                                                ? "fill-yellow-400 text-yellow-400"
+                                                : "text-gray-300"
+                                              }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <span className="font-semibold text-yellow-700 dark:text-yellow-400 text-sm">
+                                        {escrowRatings[escrow.id].rating}/5
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                      Pending
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
 
                         {/* Milestones - Compact Design */}
@@ -1563,9 +1550,8 @@ export default function FreelancerPage() {
                                   // For subsequent milestones, check if the previous one is approved
                                   const previousMilestone =
                                     escrow.milestones[index - 1];
-                                  const previousMilestoneKey = `${escrow.id}-${
-                                    index - 1
-                                  }`;
+                                  const previousMilestoneKey = `${escrow.id}-${index - 1
+                                    }`;
 
                                   // Check if previous milestone is approved
                                   const isPreviousApproved =
@@ -1608,17 +1594,16 @@ export default function FreelancerPage() {
                               return (
                                 <div
                                   key={index}
-                                  className={`p-4 rounded-lg border-2 ${
-                                    isApproved
+                                  className={`p-4 rounded-lg border-2 ${isApproved
                                       ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
                                       : isSubmitted
-                                      ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-                                      : isCurrent
-                                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                                      : isBlocked
-                                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                                      : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
-                                  }`}
+                                        ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                                        : isCurrent
+                                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                          : isBlocked
+                                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                                            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                                    }`}
                                 >
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
@@ -1651,7 +1636,7 @@ export default function FreelancerPage() {
                                       "To be defined"
                                     ) &&
                                     milestone.description !==
-                                      `Milestone ${index + 1}` && (
+                                    `Milestone ${index + 1}` && (
                                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                                         <span className="font-medium">
                                           Requirements:
@@ -1659,9 +1644,9 @@ export default function FreelancerPage() {
                                         <p className="mt-1 line-clamp-2">
                                           {milestone.description.length > 80
                                             ? milestone.description.substring(
-                                                0,
-                                                80
-                                              ) + "..."
+                                              0,
+                                              80
+                                            ) + "..."
                                             : milestone.description}
                                         </p>
                                       </div>
@@ -1737,12 +1722,12 @@ export default function FreelancerPage() {
                                             </p>
                                             <p className="text-sm text-purple-700 dark:text-purple-300">
                                               {milestone.winner ===
-                                              escrow.beneficiary
+                                                escrow.beneficiary
                                                 ? "You (Freelancer)"
                                                 : milestone.winner ===
                                                   escrow.payer
-                                                ? "Client"
-                                                : `${milestone.winner.slice(
+                                                  ? "Client"
+                                                  : `${milestone.winner.slice(
                                                     0,
                                                     6
                                                   )}...${milestone.winner.slice(
@@ -1827,9 +1812,8 @@ export default function FreelancerPage() {
                                 // For subsequent milestones, check if the previous one is approved
                                 const previousMilestone =
                                   escrow.milestones[i - 1];
-                                const previousMilestoneKey = `${escrow.id}-${
-                                  i - 1
-                                }`;
+                                const previousMilestoneKey = `${escrow.id}-${i - 1
+                                  }`;
 
                                 // Check if previous milestone is approved
                                 const isPreviousApproved =
@@ -1941,9 +1925,8 @@ export default function FreelancerPage() {
                                     "To be defined"
                                   ) &&
                                   currentMilestone.description !==
-                                    `Milestone ${
-                                      currentMilestoneIndex + 1
-                                    }` && (
+                                  `Milestone ${currentMilestoneIndex + 1
+                                  }` && (
                                     <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                                       <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
                                         Client Requirements:
@@ -1990,7 +1973,7 @@ export default function FreelancerPage() {
                                           }
                                           disabled={
                                             submittingMilestone ===
-                                              milestoneKey ||
+                                            milestoneKey ||
                                             !milestoneDescriptions[
                                               milestoneKey
                                             ]?.trim()
@@ -2043,14 +2026,14 @@ export default function FreelancerPage() {
                         <div className="flex gap-3">
                           {(escrow.status === "pending" ||
                             escrow.status === "Pending") && (
-                            <Button
-                              onClick={() => startWork(escrow.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Play className="h-4 w-4" />
-                              Start Work
-                            </Button>
-                          )}
+                              <Button
+                                onClick={() => startWork(escrow.id)}
+                                className="flex items-center gap-2"
+                              >
+                                <Play className="h-4 w-4" />
+                                Start Work
+                              </Button>
+                            )}
                         </div>
                       </CardContent>
                     </Card>

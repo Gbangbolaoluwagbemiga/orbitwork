@@ -29,6 +29,7 @@ interface EscrowCardProps {
   };
   rating?: { rating: number; exists: boolean };
   onRatingSubmitted?: () => void;
+  onViewApplications?: (escrowId: string) => void;
 }
 
 export function EscrowCard({
@@ -46,6 +47,7 @@ export function EscrowCard({
   getDaysLeftMessage,
   rating,
   onRatingSubmitted,
+  onViewApplications,
 }: EscrowCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -102,8 +104,8 @@ export function EscrowCard({
   const progressPercentage =
     escrow.totalAmount !== "0"
       ? (Number.parseFloat(escrow.releasedAmount) /
-          Number.parseFloat(escrow.totalAmount)) *
-        100
+        Number.parseFloat(escrow.totalAmount)) *
+      100
       : 0;
 
   const completedMilestones = escrow.milestones.filter(
@@ -146,15 +148,15 @@ export function EscrowCard({
                   hasResolvedDispute
                     ? "resolved"
                     : isTerminated
-                    ? "terminated"
-                    : escrow.status
+                      ? "terminated"
+                      : escrow.status
                 )}
               >
                 {hasResolvedDispute
                   ? "Dispute Resolved"
                   : isTerminated
-                  ? "terminated"
-                  : escrow.status}
+                    ? "terminated"
+                    : escrow.status}
               </Badge>
               <Button
                 variant="ghost"
@@ -193,7 +195,7 @@ export function EscrowCard({
                     )}
                     {/* Show exact fund split if available */}
                     {milestone.freelancerAmount !== undefined &&
-                    milestone.clientAmount !== undefined ? (
+                      milestone.clientAmount !== undefined ? (
                       <div className="text-xs text-purple-600 dark:text-purple-400 space-y-0.5 mt-1">
                         <p>
                           <span className="font-medium">Freelancer:</span>{" "}

@@ -14,6 +14,8 @@ interface JobCardProps {
   isContractPaused: boolean;
   ongoingProjectsCount: number;
   onApply: (job: Escrow) => void;
+  clientRating?: number;
+  clientRatingCount?: number;
 }
 
 export function JobCard({
@@ -23,6 +25,8 @@ export function JobCard({
   isContractPaused,
   ongoingProjectsCount,
   onApply,
+  clientRating = 0,
+  clientRatingCount = 0,
 }: JobCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {

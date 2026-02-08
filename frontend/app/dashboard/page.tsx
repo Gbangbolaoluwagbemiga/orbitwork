@@ -6,6 +6,7 @@ import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
 import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import {
   useNotifications,
   createEscrowNotification,
@@ -32,6 +33,7 @@ import {
   type SortOption,
 } from "@/components/dashboard/filter-sort-controls";
 import { YieldStatus } from "@/components/dashboard/yield-status";
+import { ApplicationsDialog } from "@/components/dashboard/applications-dialog";
 
 export default function DashboardPage() {
   const { wallet, getContract } = useWeb3();
@@ -50,6 +52,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewingApplicationsFor, setViewingApplicationsFor] = useState<string | null>(null);
 
   const getStatusFromNumber = (status: number): string => {
     switch (status) {
@@ -731,6 +734,7 @@ export default function DashboardPage() {
                 milestones: milestones,
                 projectTitle: escrowSummary[13] || "", // projectTitle
                 projectDescription: escrowSummary[14] || "", // projectDescription
+                isOpenJob: escrowSummary[12], // isOpenJob is at index 12 based on summary structure comment
               };
 
               userEscrows.push(escrow);
@@ -746,32 +750,36 @@ export default function DashboardPage() {
       setEscrows(userEscrows);
 
       // Fetch ratings for completed escrows
+      // Fetch ratings for completed escrows
       const ratings: Record<string, { rating: number; exists: boolean }> = {};
-      for (const escrow of userEscrows) {
-        if (escrow.status === "completed" && escrow.isClient) {
-          try {
-            const ratingData = await contract.call(
-              "getEscrowRating",
-              escrow.id
-            );
-            if (
-              ratingData &&
-              Array.isArray(ratingData) &&
-              ratingData.length >= 5 &&
-              ratingData[4]
-            ) {
-              // ratingData: [rater, freelancer, rating, ratedAt, exists]
-              ratings[escrow.id] = {
-                rating: Number(ratingData[2]) || 0,
-                exists: Boolean(ratingData[4]),
-              };
-            } else {
+
+      // Get ratings contract
+      const ratingsContract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
+
+      if (ratingsContract) {
+        for (const escrow of userEscrows) {
+          if (escrow.status === "completed" && escrow.isClient && wallet.address) {
+            try {
+              const hasRated = await ratingsContract.call(
+                "hasRated",
+                escrow.id,
+                wallet.address
+              );
+
+              if (hasRated) {
+                // If rated, we just mark as exists. 
+                // To get actual score we'd need to fetch all ratings which is expensive
+                ratings[escrow.id] = {
+                  rating: 5, // Placeholder, UI will just show "Rated" if we don't know score
+                  exists: true,
+                };
+              } else {
+                ratings[escrow.id] = { rating: 0, exists: false };
+              }
+            } catch (error) {
+              console.log(`Rating check for escrow ${escrow.id}:`, error);
               ratings[escrow.id] = { rating: 0, exists: false };
             }
-          } catch (error) {
-            // Rating doesn't exist yet or error fetching
-            console.log(`Rating check for escrow ${escrow.id}:`, error);
-            ratings[escrow.id] = { rating: 0, exists: false };
           }
         }
       }
@@ -1425,6 +1433,7 @@ export default function DashboardPage() {
                       getDaysLeftMessage={getDaysLeftMessage}
                       rating={rating}
                       onRatingSubmitted={() => fetchUserEscrows()}
+                      onViewApplications={(id) => setViewingApplicationsFor(id)}
                     />
                   );
                 })}
@@ -1433,6 +1442,17 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+      {viewingApplicationsFor && (
+        <ApplicationsDialog
+          escrowId={viewingApplicationsFor}
+          open={!!viewingApplicationsFor}
+          onOpenChange={(open) => !open && setViewingApplicationsFor(null)}
+          onHire={() => {
+            setViewingApplicationsFor(null);
+            handleRefresh();
+          }}
+        />
+      )}
     </div>
   );
 }

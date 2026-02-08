@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 
 interface RateFreelancerProps {
   escrowId: string;
@@ -30,11 +30,12 @@ export function RateFreelancer({
   onRated,
   existingRating,
 }: RateFreelancerProps) {
-  const { getContract } = useWeb3();
+  const { getContract, wallet } = useWeb3();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasRated, setHasRated] = useState(existingRating?.exists || false);
   const [currentRating, setCurrentRating] = useState(
@@ -49,11 +50,34 @@ export function RateFreelancer({
     }
   }, [existingRating]);
 
+  // Check if already rated when dialog opens
+  useEffect(() => {
+    if (isOpen && wallet.address && !hasRated) {
+      checkIfRated();
+    }
+  }, [isOpen, wallet.address]);
+
+  const checkIfRated = async () => {
+    try {
+      const contract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
+      if (!contract) return;
+
+      const rated = await contract.call("hasRated", escrowId, wallet.address);
+      if (rated) {
+        setHasRated(true);
+        // We can't easily get the score without fetching all ratings, simplified for now
+        // But we can inform the user
+      }
+    } catch (e) {
+      console.log("Error checking rating status:", e);
+    }
+  }
+
   const handleSubmitRating = async () => {
     if (hasRated) {
       toast({
         title: "Already Rated",
-        description: "You have already rated this freelancer",
+        description: "You have already rated this transaction",
         variant: "destructive",
       });
       return;
@@ -70,88 +94,53 @@ export function RateFreelancer({
 
     setIsSubmitting(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
       if (!contract) {
         throw new Error("Contract not available");
       }
 
-      // Check if already rated before submitting
-      try {
-        const ratingData = await contract.call("getEscrowRating", escrowId);
-        if (ratingData && ratingData[4]) {
-          toast({
-            title: "Already Rated",
-            description:
-              "This freelancer has already been rated for this project",
-            variant: "destructive",
-          });
-          setHasRated(true);
-          setCurrentRating(Number(ratingData[2]));
-          setIsOpen(false);
-          setIsSubmitting(false);
-          if (onRated) onRated();
-          return;
-        }
-      } catch (checkError) {
-        // If check fails, continue - might be first rating or contract error
-        console.log("Rating check:", checkError);
-      }
-
-      await contract.send("rateFreelancer", "no-value", escrowId, rating);
+      console.log("Submitting rating:", escrowId, rating, comment);
+      await contract.send("rateTransaction", "no-value", escrowId, rating, comment);
 
       toast({
         title: "Rating submitted",
-        description: `You rated this freelancer ${rating} out of 5 stars`,
+        description: `You rated this interaction ${rating} out of 5 stars`,
       });
 
       setHasRated(true);
       setCurrentRating(rating);
       setIsOpen(false);
       setRating(0);
+      setComment("");
       if (onRated) onRated();
     } catch (error: any) {
       console.error("Error submitting rating:", error);
-      // Check if error is because already rated
-      if (
-        error.message?.includes("Already rated") ||
-        error.message?.includes("already rated")
-      ) {
-        setHasRated(true);
-        toast({
-          title: "Already Rated",
-          description:
-            "This freelancer has already been rated for this project",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Rating failed",
-          description: error.message || "Failed to submit rating",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Rating failed",
+        description: error.message || "Failed to submit rating",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // If already rated, show the rating instead of button
-  if (hasRated && currentRating > 0) {
+  // If already rated, show the rating (if known) or just "Rated"
+  if (hasRated) {
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
-              className={`h-4 w-4 ${
-                star <= currentRating
+              className={`h-4 w-4 ${star <= currentRating
                   ? "fill-yellow-400 text-yellow-400"
                   : "text-gray-300"
-              }`}
+                }`}
             />
           ))}
         </div>
-        <span className="text-sm font-medium">Rated {currentRating}/5</span>
+        <span className="text-sm font-medium">Rated {currentRating > 0 ? `${currentRating}/5` : ""}</span>
       </div>
     );
   }
@@ -166,19 +155,18 @@ export function RateFreelancer({
         disabled={hasRated}
       >
         <Star className="h-4 w-4" />
-        Rate Freelancer
+        Rate Experience
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rate Freelancer</DialogTitle>
+            <DialogTitle>Rate Experience</DialogTitle>
             <DialogDescription>
-              How would you rate your experience with this freelancer?
+              How would you rate your experience with this transaction?
             </DialogDescription>
             <div className="mt-2 text-sm text-muted-foreground">
-              Freelancer: {freelancerAddress.slice(0, 6)}...
-              {freelancerAddress.slice(-4)}
+              Escrow ID: {escrowId}
             </div>
           </DialogHeader>
 
@@ -194,11 +182,10 @@ export function RateFreelancer({
                   className="transition-transform hover:scale-110"
                 >
                   <Star
-                    className={`h-10 w-10 ${
-                      star <= (hoveredRating || rating)
+                    className={`h-10 w-10 ${star <= (hoveredRating || rating)
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                 </button>
               ))}
@@ -209,6 +196,15 @@ export function RateFreelancer({
                 You selected {rating} out of 5 stars
               </div>
             )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Comment (Optional)</label>
+              <Textarea
+                placeholder="Share your experience..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -217,6 +213,7 @@ export function RateFreelancer({
               onClick={() => {
                 setIsOpen(false);
                 setRating(0);
+                setComment("");
               }}
               disabled={isSubmitting}
             >
