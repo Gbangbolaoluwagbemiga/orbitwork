@@ -1,80 +1,51 @@
 # Dependencies
-node_modules/
-npm-debug.log*
+node_modules
+.pnp
+.pnp.js
 
+# Testing
+coverage
+.nyc_output
 
-# Hardhat files
-cache/
-artifacts/
-typechain/
-typechain-types/
+# Production
+build
+dist
+out
 
-# Environment variables
+# Environment Variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.env
+!.env.example
 
+# Debug Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# IDE files
-.idea/
+# Editor
+.idea
+.vscode
 *.swp
 *.swo
-*~
-
-# OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
-# Logs
-logs
-*.log
+# Foundry
+broadcast
+cache
+out
+forge-cache
 
-# Coverage directory
-coverage/
-*.lcov
-coverage.json
+# Hardhat
+artifacts
+cache
+typechain
+typechain-types
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Editor directories and files
-.vscode
-
-
-# Solidity
-*.abi
-*.bin
-*.bin-runtime
-
-# Build outputs
-build/
-dist/
-out/
-
-# Local development
-.local/
-
-# Theme and customization files
-secureflow-theme.json
-apply-theme.sh
-check-colors.sh
-fix-syntax.sh
-deployed-addresses.json
-.vercel
-
-# Documentation (temporary/development)
-# Keep only production docs in repo
-# *-QUICKSTART.md
-# *-STATUS.md
-# *-SETUP_COMPLETE.md
-
-# Scripts output
-*.log
-
+# Next.js
+.next
