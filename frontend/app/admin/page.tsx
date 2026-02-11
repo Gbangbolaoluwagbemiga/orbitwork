@@ -1815,14 +1815,14 @@ export default function AdminPage() {
                   Network
                 </Label>
                 <p className="text-sm bg-muted/50 p-3 rounded-lg">
-                  Celo Mainnet
+                  Unichain Sepolia
                 </p>
               </div>
               <div>
                 <Label className="text-muted-foreground mb-2 block">
                   Chain ID
                 </Label>
-                <p className="text-sm bg-muted/50 p-3 rounded-lg">42220</p>
+                <p className="text-sm bg-muted/50 p-3 rounded-lg">1301</p>
               </div>
               <div>
                 <Label className="text-muted-foreground mb-2 block">
@@ -1878,14 +1878,14 @@ export default function AdminPage() {
             <div className="flex items-center gap-3 mb-2">
               <div
                 className={`flex items-center justify-center w-12 h-12 rounded-full ${dialogContent.variant === "destructive"
-                    ? "bg-destructive/10"
-                    : "bg-primary/10"
+                  ? "bg-destructive/10"
+                  : "bg-primary/10"
                   }`}
               >
                 <Icon
                   className={`h-6 w-6 ${dialogContent.variant === "destructive"
-                      ? "text-destructive"
-                      : "text-primary"
+                    ? "text-destructive"
+                    : "text-primary"
                     }`}
                 />
               </div>
