@@ -1242,7 +1242,7 @@ export default function CreateEscrowPage() {
           BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** 18)).toString()
         );
 
-        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default arbiter
+        const arbiters = [wallet.address]; // Use wallet as arbiter (owner is always authorized)
         const requiredConfirmations = 1;
 
         // Convert duration from days to seconds
@@ -1352,7 +1352,7 @@ export default function CreateEscrowPage() {
         // Use createEscrow for ERC20 tokens
         // Note: ERC20 tokens must be whitelisted (already checked above)
         console.log("Creating ERC20 escrow with token:", formData.token);
-        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default arbiter
+        const arbiters = [wallet.address]; // Use wallet as arbiter (owner is always authorized)
         const requiredConfirmations = 1;
 
         // Convert milestone amounts to wei for ERC20 tokens
@@ -1611,10 +1611,10 @@ export default function CreateEscrowPage() {
                 <div key={s} className="flex items-center gap-4">
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${s === step
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : s < step
-                          ? "border-primary bg-primary/20 text-primary"
-                          : "border-muted-foreground/30 text-muted-foreground"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : s < step
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "border-muted-foreground/30 text-muted-foreground"
                       }`}
                   >
                     {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
