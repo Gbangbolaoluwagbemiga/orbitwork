@@ -127,6 +127,17 @@ export function WalletButton() {
             </div>
           </div>
 
+          {/* Mobile: show network icon + balance */}
+          <div className="flex md:hidden items-center gap-1.5">
+            <div className="w-3.5 h-3.5 rounded-full overflow-hidden flex-shrink-0">
+              <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <span className="text-xs">{Number(wallet.balance).toFixed(3)}</span>
+            <span className="text-xs text-muted-foreground">ETH</span>
+          </div>
+
           {/* Always show just the address on mobile; also show on desktop after icons */}
           <span className="truncate md:ml-1" title={wallet.address}>
             {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
