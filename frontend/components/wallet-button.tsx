@@ -102,20 +102,11 @@ export function WalletButton() {
         >
           {/* Desktop/tablet: show network + balance + avatar */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Dynamic network icon (WalletConnect chain icons) */}
+            {/* Dynamic network icon - Unichain Sepolia */}
             <div className="w-4 h-4 rounded-full overflow-hidden">
-              {!networkIconError ? (
-                <img
-                  src={`https://assets.walletconnect.com/chains/${wallet.chainId}.png`}
-                  alt="Network"
-                  className="w-full h-full object-cover"
-                  onError={() => setNetworkIconError(true)}
-                />
-              ) : (
-                <div className="w-full h-full bg-blue-500 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              )}
+              <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
             </div>
 
             <span>{Number(wallet.balance).toFixed(3)} ETH</span>
