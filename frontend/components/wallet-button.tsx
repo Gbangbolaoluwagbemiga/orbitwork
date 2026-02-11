@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { NetworkSetupDialog } from "@/components/network-setup-dialog";
 
 export function WalletButton() {
-  const { wallet, switchToCelo } = useWeb3();
+  const { wallet, switchToUnichain } = useWeb3();
   const { open } = useAppKit();
   const { isConnected: appKitConnected } = useAppKitAccount();
   const [networkIconError, setNetworkIconError] = useState(false);
@@ -59,7 +59,7 @@ export function WalletButton() {
         >
           Add Celo Network
         </Button>
-        <Button onClick={switchToCelo} variant="outline">
+        <Button onClick={switchToUnichain} variant="outline">
           Switch to Celo
         </Button>
         <NetworkSetupDialog 

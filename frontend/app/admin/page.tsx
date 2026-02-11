@@ -15,7 +15,7 @@ import {
 import { useWeb3 } from "@/contexts/web3-context";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/hooks/use-toast";
-import { CONTRACTS, CELO_MAINNET } from "@/lib/web3/config";
+import { CONTRACTS, UNICHAIN_SEPOLIA } from "@/lib/web3/config";
 import { SECUREFLOW_ABI } from "@/lib/web3/abis";
 import { DisputeResolution } from "@/components/admin/dispute-resolution";
 import {
@@ -316,7 +316,7 @@ export default function AdminPage() {
         let events: any[] = [];
         let lastError: any = null;
 
-        for (const rpcUrl of CELO_MAINNET.rpcUrls) {
+        for (const rpcUrl of UNICHAIN_SEPOLIA.rpcUrls) {
           try {
             provider = new ethers.JsonRpcProvider(rpcUrl);
             const contractWithProvider = new ethers.Contract(
@@ -589,7 +589,7 @@ export default function AdminPage() {
         let arbiterEvents: any[] = [];
         let lastError: any = null;
 
-        for (const rpcUrl of CELO_MAINNET.rpcUrls) {
+        for (const rpcUrl of UNICHAIN_SEPOLIA.rpcUrls) {
           try {
             provider = new ethers.JsonRpcProvider(rpcUrl);
             const contractWithProvider = new ethers.Contract(

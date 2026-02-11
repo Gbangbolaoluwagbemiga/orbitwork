@@ -10,7 +10,7 @@ import { useSmartAccount } from "@/contexts/smart-account-context";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CONTRACTS, ZERO_ADDRESS, CELO_MAINNET } from "@/lib/web3/config";
+import { CONTRACTS, ZERO_ADDRESS, UNICHAIN_SEPOLIA } from "@/lib/web3/config";
 import { SECUREFLOW_ABI, ERC20_ABI } from "@/lib/web3/abis";
 import { useRouter } from "next/navigation";
 import { ProjectDetailsStep } from "@/components/create/project-details-step";
@@ -68,7 +68,7 @@ export default function CreateEscrowPage() {
       const currentChainId = await (window.ethereum as any).request({
         method: "eth_chainId",
       });
-      const targetChainId = CELO_MAINNET.chainId; // Somnia Dream Testnet
+      const targetChainId = UNICHAIN_SEPOLIA.chainId; // Somnia Dream Testnet
 
       setIsOnCorrectNetwork(
         currentChainId.toLowerCase() === targetChainId.toLowerCase()
@@ -138,7 +138,7 @@ export default function CreateEscrowPage() {
             if (cachedTokens.length > 0) {
               // Quick metadata fetch for cached tokens
               const provider = new ethers.JsonRpcProvider(
-                CELO_MAINNET.rpcUrls[0]
+                UNICHAIN_SEPOLIA.rpcUrls[0]
               );
               const ERC20_ABI = [
                 "function name() view returns (string)",
@@ -276,7 +276,7 @@ export default function CreateEscrowPage() {
       // Only query recent events if we have time (non-blocking)
       try {
         console.log("🔍 Checking recent events (last 500k blocks) in background...");
-        const provider = new ethers.JsonRpcProvider(CELO_MAINNET.rpcUrls[0]);
+        const provider = new ethers.JsonRpcProvider(UNICHAIN_SEPOLIA.rpcUrls[0]);
         const contractWithProvider = new ethers.Contract(
           CONTRACTS.SECUREFLOW_ESCROW,
           SECUREFLOW_ABI,
@@ -455,7 +455,7 @@ export default function CreateEscrowPage() {
       }
 
       // Fetch token metadata in parallel with timeout
-      const provider = new ethers.JsonRpcProvider(CELO_MAINNET.rpcUrls[0]);
+      const provider = new ethers.JsonRpcProvider(UNICHAIN_SEPOLIA.rpcUrls[0]);
       const ERC20_ABI = [
         "function name() view returns (string)",
         "function symbol() view returns (string)",
@@ -986,7 +986,7 @@ export default function CreateEscrowPage() {
           if (balance === null) {
             try {
               const rpcProvider = new ethers.JsonRpcProvider(
-                CELO_MAINNET.rpcUrls[0]
+                UNICHAIN_SEPOLIA.rpcUrls[0]
               );
               const tokenContractRPC = new ethers.Contract(
                 checksummedTokenAddress,
@@ -1155,7 +1155,7 @@ export default function CreateEscrowPage() {
             balanceInWei = await walletProvider.getBalance(checksummedAddress);
             balanceSource = "walletProvider";
             console.log(
-              `✅ ${CELO_MAINNET.nativeCurrency.symbol} balance from wallet provider:`,
+              `✅ ${UNICHAIN_SEPOLIA.nativeCurrency.symbol} balance from wallet provider:`,
               balanceInWei.toString()
             );
           } catch (walletError: any) {
@@ -1178,7 +1178,7 @@ export default function CreateEscrowPage() {
             balanceInWei = BigInt(balance);
             balanceSource = "eth_getBalance";
             console.log(
-              `✅ ${CELO_MAINNET.nativeCurrency.symbol} balance from eth_getBalance:`,
+              `✅ ${UNICHAIN_SEPOLIA.nativeCurrency.symbol} balance from eth_getBalance:`,
               balanceInWei.toString()
             );
           } catch (rpcError: any) {
@@ -1192,12 +1192,12 @@ export default function CreateEscrowPage() {
             const { ethers } = await import("ethers");
             const checksummedAddress = ethers.getAddress(wallet.address);
             const provider = new ethers.JsonRpcProvider(
-              CELO_MAINNET.rpcUrls[0]
+              UNICHAIN_SEPOLIA.rpcUrls[0]
             );
             balanceInWei = await provider.getBalance(checksummedAddress);
             balanceSource = "directRPC";
             console.log(
-              `✅ ${CELO_MAINNET.nativeCurrency.symbol} balance from direct RPC:`,
+              `✅ ${UNICHAIN_SEPOLIA.nativeCurrency.symbol} balance from direct RPC:`,
               balanceInWei.toString()
             );
           } catch (directRpcError: any) {
@@ -1210,14 +1210,14 @@ export default function CreateEscrowPage() {
 
         if (!balanceInWei) {
           throw new Error(
-            `Failed to retrieve ${CELO_MAINNET.nativeCurrency.symbol} balance from all methods. Please check your wallet connection and network.`
+            `Failed to retrieve ${UNICHAIN_SEPOLIA.nativeCurrency.symbol} balance from all methods. Please check your wallet connection and network.`
           );
         }
 
         const requiredAmount = BigInt(totalAmountInWei);
         const balanceFormatted = Number(balanceInWei) / 10 ** 18;
         const requiredFormatted = Number(requiredAmount) / 10 ** 18;
-        const nativeSymbol = CELO_MAINNET.nativeCurrency.symbol;
+        const nativeSymbol = UNICHAIN_SEPOLIA.nativeCurrency.symbol;
 
         console.log(`${nativeSymbol} Balance check:`, {
           balanceSource,

@@ -23,7 +23,7 @@ export function NetworkSetupDialog({
   open,
   onOpenChange,
 }: NetworkSetupDialogProps) {
-  const { addCeloNetwork, switchToCelo } = useWeb3();
+  const { addCeloNetwork, switchToUnichain } = useWeb3();
   const [isAdding, setIsAdding] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -42,7 +42,7 @@ export function NetworkSetupDialog({
         setTimeout(async () => {
           setIsSwitching(true);
           try {
-            await switchToCelo();
+            await switchToUnichain();
             // Close dialog after successful switch
             setTimeout(() => {
               onOpenChange(false);
@@ -69,7 +69,7 @@ export function NetworkSetupDialog({
     setError(null);
 
     try {
-      await switchToCelo();
+      await switchToUnichain();
       setSuccess(true);
       setTimeout(() => {
         onOpenChange(false);

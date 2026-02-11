@@ -47,7 +47,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Helper to check if Unichain network exists in wallet
-  const checkCeloNetworkExists = async (): Promise<boolean> => {
+  const checkUnichainNetworkExists = async (): Promise<boolean> => {
     if (typeof window === "undefined" || !window.ethereum) return false;
 
     try {
@@ -527,7 +527,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addCeloNetwork = async (): Promise<boolean> => {
+  const addUnichainNetwork = async (): Promise<boolean> => {
     if (typeof window === "undefined" || !window.ethereum) {
       toast({
         title: "Wallet not found",
@@ -855,7 +855,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         disconnectWallet,
         switchToUnichain,
         switchToUnichainTestnet,
-        addCeloNetwork,
+        addUnichainNetwork,
         getContract,
         isOwner,
       }}
