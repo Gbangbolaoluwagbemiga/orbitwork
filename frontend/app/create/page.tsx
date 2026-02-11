@@ -1242,7 +1242,7 @@ export default function CreateEscrowPage() {
           BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** 18)).toString()
         );
 
-        const arbiters = [wallet.address]; // Use wallet as arbiter (owner is always authorized)
+        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default platform arbiter
         const requiredConfirmations = 1;
 
         // Convert duration from days to seconds
@@ -1352,7 +1352,7 @@ export default function CreateEscrowPage() {
         // Use createEscrow for ERC20 tokens
         // Note: ERC20 tokens must be whitelisted (already checked above)
         console.log("Creating ERC20 escrow with token:", formData.token);
-        const arbiters = [wallet.address]; // Use wallet as arbiter (owner is always authorized)
+        const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default platform arbiter
         const requiredConfirmations = 1;
 
         // Convert milestone amounts to wei for ERC20 tokens
