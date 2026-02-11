@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useState, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 import { NetworkSetupDialog } from "@/components/network-setup-dialog";
 
 export function WalletButton() {
