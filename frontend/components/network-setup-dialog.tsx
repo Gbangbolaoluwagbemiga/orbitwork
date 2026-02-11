@@ -23,7 +23,7 @@ export function NetworkSetupDialog({
   open,
   onOpenChange,
 }: NetworkSetupDialogProps) {
-  const { addCeloNetwork, switchToUnichain } = useWeb3();
+  const { addUnichainNetwork, switchToUnichain } = useWeb3();
   const [isAdding, setIsAdding] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -35,7 +35,7 @@ export function NetworkSetupDialog({
     setSuccess(false);
 
     try {
-      const added = await addCeloNetwork();
+      const added = await addUnichainNetwork();
       if (added) {
         setSuccess(true);
         // Try to switch after a short delay
@@ -55,7 +55,7 @@ export function NetworkSetupDialog({
           }
         }, 2000);
       } else {
-        setError("Failed to add Celo network. Please try again or add it manually.");
+        setError("Failed to add Unichain network. Please try again or add it manually.");
       }
     } catch (err: any) {
       setError(err.message || "Failed to add network. Please try again.");
@@ -88,10 +88,10 @@ export function NetworkSetupDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
-            Celo Network Required
+            Unichain Network Required
           </DialogTitle>
           <DialogDescription className="pt-2">
-            To use SecureFlow, you need to add and connect to the Celo Mainnet
+            To use SecureFlow, you need to add and connect to the Unichain Sepolia
             network in your wallet.
           </DialogDescription>
         </DialogHeader>
@@ -105,8 +105,8 @@ export function NetworkSetupDialog({
               </AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-300">
                 {isSwitching
-                  ? "Switching to Celo Mainnet..."
-                  : "Please switch to Celo Mainnet in your wallet to continue."}
+                  ? "Switching to Unichain Sepolia..."
+                  : "Please switch to Unichain Sepolia in your wallet to continue."}
               </AlertDescription>
             </Alert>
           )}
@@ -137,7 +137,7 @@ export function NetworkSetupDialog({
                 </div>
                 <div className="flex justify-between">
                   <span>RPC URL:</span>
-                  <span className="font-mono text-xs">forno.celo.org</span>
+                  <span className="font-mono text-xs">sepolia.unichain.org</span>
                 </div>
               </div>
             </div>
@@ -145,27 +145,27 @@ export function NetworkSetupDialog({
 
           <div className="text-sm text-muted-foreground">
             <p>
-              Don't have CELO tokens? You can get them from:
+              Don't have ETH tokens? You can get them from:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>
                 <a
-                  href="https://valoraapp.com/"
+                  href="https://unichain.org"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  Valora Wallet
+                  Unichain Bridge
                 </a>
               </li>
               <li>
                 <a
-                  href="https://celo.org/developers/faucet"
+                  href="https://sepolia.unichain.org"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  Celo Faucet (for testnet)
+                  Unichain Faucet (for testnet)
                 </a>
               </li>
             </ul>
@@ -192,7 +192,7 @@ export function NetworkSetupDialog({
                   Adding...
                 </>
               ) : (
-                "Add Celo Network"
+                "Add Unichain Network"
               )}
             </Button>
           ) : (
@@ -207,7 +207,7 @@ export function NetworkSetupDialog({
                   Switching...
                 </>
               ) : (
-                "Switch to Celo"
+                "Switch to Unichain"
               )}
             </Button>
           )}

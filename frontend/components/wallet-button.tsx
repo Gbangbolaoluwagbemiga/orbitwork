@@ -30,13 +30,13 @@ export function WalletButton() {
     if (isOpening || appKitConnected) {
       return;
     }
-    
+
     setIsOpening(true);
     try {
       await open?.();
     } catch (error: any) {
       console.error("Failed to open AppKit:", error);
-      
+
       // Check if error is related to network
       const errorMessage = error.message?.toLowerCase() || "";
       if (errorMessage.includes("network") || errorMessage.includes("chain")) {
@@ -52,19 +52,19 @@ export function WalletButton() {
   if (wallet.address && !wallet.isConnected) {
     return (
       <>
-        <Button 
-          onClick={() => setShowNetworkDialog(true)} 
+        <Button
+          onClick={() => setShowNetworkDialog(true)}
           variant="default"
           className="mr-2"
         >
-          Add Celo Network
+          Add Unichain Network
         </Button>
         <Button onClick={switchToUnichain} variant="outline">
-          Switch to Celo
+          Switch to Unichain
         </Button>
-        <NetworkSetupDialog 
-          open={showNetworkDialog} 
-          onOpenChange={setShowNetworkDialog} 
+        <NetworkSetupDialog
+          open={showNetworkDialog}
+          onOpenChange={setShowNetworkDialog}
         />
       </>
     );
@@ -76,9 +76,9 @@ export function WalletButton() {
         <Button onClick={handleClick} variant="default">
           Connect Wallet
         </Button>
-        <NetworkSetupDialog 
-          open={showNetworkDialog} 
-          onOpenChange={setShowNetworkDialog} 
+        <NetworkSetupDialog
+          open={showNetworkDialog}
+          onOpenChange={setShowNetworkDialog}
         />
       </>
     );
@@ -108,7 +108,7 @@ export function WalletButton() {
           )}
         </div>
 
-        <span>{Number(wallet.balance).toFixed(3)} CELO</span>
+        <span>{Number(wallet.balance).toFixed(3)} ETH</span>
         <span className="text-muted-foreground">·</span>
 
         {/* Dynamic wallet avatar (Effigy gradient orb) */}

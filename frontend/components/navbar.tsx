@@ -76,7 +76,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <Shield className="h-6 w-6 text-primary" />
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              SecureFlow
+              Orbitwork
             </span>
           </Link>
 
@@ -84,41 +84,37 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             <Link
               href="/"
-              className={`text-sm font-medium transition-colors ${
-                isActive("/")
+              className={`text-sm font-medium transition-colors ${isActive("/")
                   ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                   : "hover:text-primary"
-              }`}
+                }`}
             >
               Home
             </Link>
             <Link
               href="/jobs"
-              className={`text-sm font-medium transition-colors ${
-                isActive("/jobs")
+              className={`text-sm font-medium transition-colors ${isActive("/jobs")
                   ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                   : "hover:text-primary"
-              }`}
+                }`}
             >
               Browse Jobs
             </Link>
             <Link
               href="/create"
-              className={`text-sm font-medium transition-colors ${
-                isActive("/create")
+              className={`text-sm font-medium transition-colors ${isActive("/create")
                   ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                   : "hover:text-primary"
-              }`}
+                }`}
             >
               Create Escrow
             </Link>
             <Link
               href="/dashboard"
-              className={`text-sm font-medium transition-colors ${
-                isActive("/dashboard")
+              className={`text-sm font-medium transition-colors ${isActive("/dashboard")
                   ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                   : "hover:text-primary"
-              }`}
+                }`}
             >
               Dashboard
             </Link>
@@ -126,11 +122,10 @@ export function Navbar() {
             {isJobCreator && hasPendingApprovals && (
               <Link
                 href="/approvals"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/approvals")
+                className={`text-sm font-medium transition-colors ${isActive("/approvals")
                     ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                     : "hover:text-primary"
-                }`}
+                  }`}
               >
                 Approvals
               </Link>
@@ -138,11 +133,10 @@ export function Navbar() {
             {isFreelancer && (
               <Link
                 href="/freelancer"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/freelancer")
+                className={`text-sm font-medium transition-colors ${isActive("/freelancer")
                     ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                     : "hover:text-primary"
-                }`}
+                  }`}
               >
                 Freelancer
               </Link>
@@ -150,11 +144,10 @@ export function Navbar() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/admin")
+                className={`text-sm font-medium transition-colors ${isActive("/admin")
                     ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                     : "hover:text-primary"
-                }`}
+                  }`}
               >
                 Admin
               </Link>
@@ -208,44 +201,40 @@ export function Navbar() {
               <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
                 <Link
                   href="/"
-                  className={`text-sm font-medium transition-colors py-2 ${
-                    isActive("/")
+                  className={`text-sm font-medium transition-colors py-2 ${isActive("/")
                       ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                       : "hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/jobs"
-                  className={`text-sm font-medium transition-colors py-2 ${
-                    isActive("/jobs")
+                  className={`text-sm font-medium transition-colors py-2 ${isActive("/jobs")
                       ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                       : "hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Browse Jobs
                 </Link>
                 <Link
                   href="/create"
-                  className={`text-sm font-medium transition-colors py-2 ${
-                    isActive("/create")
+                  className={`text-sm font-medium transition-colors py-2 ${isActive("/create")
                       ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                       : "hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Create Escrow
                 </Link>
                 <Link
                   href="/dashboard"
-                  className={`text-sm font-medium transition-colors py-2 ${
-                    isActive("/dashboard")
+                  className={`text-sm font-medium transition-colors py-2 ${isActive("/dashboard")
                       ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                       : "hover:text-primary"
-                  }`}
+                    }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Dashboard
@@ -253,11 +242,10 @@ export function Navbar() {
                 {isJobCreator && hasPendingApprovals && (
                   <Link
                     href="/approvals"
-                    className={`text-sm font-medium transition-colors py-2 ${
-                      isActive("/approvals")
+                    className={`text-sm font-medium transition-colors py-2 ${isActive("/approvals")
                         ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                         : "hover:text-primary"
-                    }`}
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Approvals
@@ -266,11 +254,10 @@ export function Navbar() {
                 {isFreelancer && (
                   <Link
                     href="/freelancer"
-                    className={`text-sm font-medium transition-colors py-2 ${
-                      isActive("/freelancer")
+                    className={`text-sm font-medium transition-colors py-2 ${isActive("/freelancer")
                         ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                         : "hover:text-primary"
-                    }`}
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Freelancer
@@ -279,11 +266,10 @@ export function Navbar() {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className={`text-sm font-medium transition-colors py-2 ${
-                      isActive("/admin")
+                    className={`text-sm font-medium transition-colors py-2 ${isActive("/admin")
                         ? "text-primary bg-primary/10 px-3 py-2 rounded-md"
                         : "hover:text-primary"
-                    }`}
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Admin
