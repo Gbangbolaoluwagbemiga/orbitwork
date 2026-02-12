@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
+import { ProductiveCapitalStats } from "@/components/dashboard/productive-capital-stats";
 import { EscrowCard } from "@/components/dashboard/escrow-card";
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
 import { RateFreelancer } from "@/components/rating-freelancer";
@@ -1367,6 +1368,31 @@ export default function DashboardPage() {
         />
         <YieldStatus />
         <DashboardStats escrows={escrows} />
+
+        {/* Productive Capital Stats */}
+        <div className="mt-8">
+          <ProductiveCapitalStats
+            totalEscrowed={escrows.reduce(
+              (sum, e) => sum + Number.parseFloat(e.totalAmount) / 1e18,
+              0
+            )}
+            totalInLP={escrows
+              .filter((e) => e.status !== "completed")
+              .reduce(
+                (sum, e) => sum + (Number.parseFloat(e.totalAmount) / 1e18) * 0.8,
+                0
+              )}
+            totalYieldEarned={escrows
+              .filter((e) => e.status !== "completed")
+              .reduce((sum, e) => {
+                const lpAmount = (Number.parseFloat(e.totalAmount) / 1e18) * 0.8;
+                const daysActive = Math.floor((Date.now() / 1000 - e.createdAt) / 86400);
+                const yieldEarned = lpAmount * 0.001 * daysActive; // 0.1% daily estimate
+                return sum + yieldEarned;
+              }, 0)}
+            tokenSymbol="OWT"
+          />
+        </div>
 
         {escrows.length === 0 ? (
           <Card className="glass border-muted p-12 text-center">

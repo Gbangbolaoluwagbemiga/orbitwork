@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Clock, DollarSign, ChevronDown, ChevronUp, Star } from "lucide-react";
 import { MilestoneActions } from "@/components/milestone-actions";
 import { RateFreelancer } from "@/components/rating-freelancer";
+import { YieldTracker } from "@/components/dashboard/yield-tracker";
 import type { Escrow, Milestone } from "@/lib/web3/types";
 
 interface EscrowCardProps {
@@ -270,6 +271,18 @@ export function EscrowCard({
                       existingRating={rating}
                     />
                   </div>
+                )}
+
+                {/* Productive Escrow: Yield Tracker */}
+                {escrow.status !== "completed" && (
+                  <YieldTracker
+                    escrowId={escrow.id}
+                    totalAmount={Number.parseFloat(escrow.totalAmount) / 1e18}
+                    tokenSymbol="OWT"
+                    daysActive={Math.floor(
+                      (Date.now() / 1000 - escrow.createdAt) / 86400
+                    )}
+                  />
                 )}
 
                 <div className="space-y-2">
