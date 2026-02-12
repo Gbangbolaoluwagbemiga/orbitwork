@@ -28,7 +28,9 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }:
 
         // Simulate yield accumulation (0.1% per day as estimate)
         const dailyYieldRate = 0.001;
-        const yieldAccumulated = lpAmount * dailyYieldRate * daysActive;
+        // Ensure daysActive is positive and reasonable
+        const validDaysActive = Math.max(0, Math.min(daysActive, 365)); // Cap at 1 year
+        const yieldAccumulated = lpAmount * dailyYieldRate * validDaysActive;
         const projectedYield = lpAmount * dailyYieldRate * 21; // 21 day project
 
         setYieldData({

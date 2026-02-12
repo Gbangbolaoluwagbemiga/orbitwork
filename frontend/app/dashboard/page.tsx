@@ -1386,7 +1386,11 @@ export default function DashboardPage() {
               .filter((e) => e.status !== "completed")
               .reduce((sum, e) => {
                 const lpAmount = (Number.parseFloat(e.totalAmount) / 1e18) * 0.8;
-                const daysActive = Math.floor((Date.now() / 1000 - e.createdAt) / 86400);
+                // Ensure days is positive and reasonable (cap at 365 days)
+                const daysActive = Math.max(0, Math.min(
+                  Math.floor((Date.now() / 1000 - e.createdAt) / 86400),
+                  365
+                ));
                 const yieldEarned = lpAmount * 0.001 * daysActive; // 0.1% daily estimate
                 return sum + yieldEarned;
               }, 0)}

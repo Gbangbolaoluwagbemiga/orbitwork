@@ -279,9 +279,9 @@ export function EscrowCard({
                     escrowId={escrow.id}
                     totalAmount={Number.parseFloat(escrow.totalAmount) / 1e18}
                     tokenSymbol="OWT"
-                    daysActive={Math.floor(
+                    daysActive={Math.max(0, Math.floor(
                       (Date.now() / 1000 - escrow.createdAt) / 86400
-                    )}
+                    ))}
                   />
                 )}
 
