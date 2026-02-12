@@ -27,4 +27,13 @@ interface IEscrowHook {
 
     function addLiquidity(PoolKey calldata key, ModifyLiquidityParams calldata params) external;
     function removeLiquidity(PoolKey calldata key, ModifyLiquidityParams calldata params) external;
+    
+    // Productive Escrow Functions
+    function onEscrowCreated(uint256 escrowId, uint256 totalAmount, PoolKey calldata key) 
+        external returns (uint256 lpAmount, uint256 reserveAmount);
+    
+    function onMilestoneApproved(uint256 escrowId, uint256 milestoneAmount, address freelancer) 
+        external returns (uint256 payment, uint256 platformYield);
+    
+    function getEscrowYield(uint256 escrowId) external view returns (uint256);
 }

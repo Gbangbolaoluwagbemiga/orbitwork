@@ -85,18 +85,29 @@ abstract contract WorkLifecycle is EscrowCore {
         m.approvedAt = block.timestamp;
 
         e.paidAmount += amount;
+        
+        // === Productive Escrow: Yield Distribution ===
+        uint256 totalPayment = amount;  // Default: just milestone amount
+        uint256 platformYieldEarned = 0;
+        
         if (liquidEscrowEnabled && address(escrowHook) != address(0)) {
             IEscrowHook.PoolKey memory key = escrowPoolKeys[escrowId];
             if (key.currency0 != address(0) || key.currency1 != address(0)) {
-                IEscrowHook.ModifyLiquidityParams memory p = escrowPoolParams[escrowId];
-                // We assume the params here are for removal if we are releasing funds
-                // Or we adjust liquidity accordingly to the milestone amount.
-                // For hackathon: we withdraw the portion needed.
-                escrowHook.removeLiquidity(key, p);
+                // Call hook to calculate yield and get payment with yield bonus
+                try escrowHook.onMilestoneApproved(
+                    escrowId,
+                    amount,
+                    e.beneficiary
+                ) returns (uint256 paymentWithYield, uint256 platformYield) {
+                    totalPayment = paymentWithYield;  // Milestone + 70% of yield
+                    platformYieldEarned = platformYield;  // Platform's 30% of yield
+                } catch {
+                    // If hook fails, use standard payment (no yield bonus)
+                }
             }
         }
 
-        _transferOut(e.token, e.beneficiary, amount);
+        _transferOut(e.token, e.beneficiary, totalPayment);
 
         emit MilestoneApproved(escrowId, milestoneIndex, msg.sender, amount, block.timestamp);
 

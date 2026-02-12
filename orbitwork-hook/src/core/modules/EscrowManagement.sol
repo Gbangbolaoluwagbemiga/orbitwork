@@ -186,20 +186,27 @@ abstract contract EscrowManagement is EscrowCore {
         userEscrows[depositor].push(escrowId);
         if (!isOpenJob) userEscrows[beneficiary].push(escrowId);
 
-        // Liquid Escrow Logic: Deploy to Uniswap v4
+        // === Productive Escrow: Auto-LP Integration ===
         if (liquidEscrowEnabled && address(escrowHook) != address(0)) {
-            // In a real scenario, the UI would provide the PoolKey and Params
-            // For now, we assume the admin has configured a default pool for the token
-            IEscrowHook.PoolKey memory key = escrowPoolKeys[escrowId];
+            IEscrowHook.PoolKey memory key =escrowPoolKeys[escrowId];
             if (key.currency0 != address(0) || key.currency1 != address(0)) {
-                IEscrowHook.ModifyLiquidityParams memory p = escrowPoolParams[escrowId];
-                
-                // Approve the hook to take the tokens
+                // Approve hook to transfer tokens for LP
                 if (token != address(0)) {
                     IERC20(token).forceApprove(address(escrowHook), totalAmount);
                 }
                 
-                escrowHook.addLiquidity(key, p);
+                // Trigger productive escrow: 80% LP, 20% reserve
+                // Hook will automatically split funds and create LP position
+                try escrowHook.onEscrowCreated(escrowId, totalAmount, key) returns (
+                    uint256 lpAmount,
+                    uint256 reserveAmount
+                ) {
+                    // Successfully created LP position with yield tracking
+                    // lpAmount = amount added to pool, reserveAmount = kept for payouts
+                } catch {
+                    // If hook fails, fall back to traditional escrow (no LP)
+                    // Funds remain in this contract
+                }
             }
         }
 
