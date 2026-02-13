@@ -10,7 +10,7 @@ import {
 import { useWeb3 } from "./web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ethers } from "ethers";
 
 interface Delegation {
@@ -196,7 +196,7 @@ export function DelegationProvider({ children }: { children: ReactNode }) {
       }
 
       // Get contract instance
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) {
         throw new Error("Contract not available");
       }

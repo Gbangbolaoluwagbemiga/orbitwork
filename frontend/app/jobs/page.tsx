@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import { ethers } from "ethers";
 import {
@@ -87,7 +87,7 @@ export default function JobsPage() {
 
   const checkContractPauseStatus = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const paused = await contract.call("paused");
 
       let isPaused = false;
@@ -114,7 +114,7 @@ export default function JobsPage() {
 
   const countOngoingProjects = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Get total number of escrows
       const totalEscrows = await contract.call("nextEscrowId");
@@ -166,7 +166,7 @@ export default function JobsPage() {
 
   const checkApplicationStatus = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const applicationStatus: Record<string, boolean> = {};
 
       for (const job of jobs) {
@@ -210,7 +210,7 @@ export default function JobsPage() {
   const fetchOpenJobs = async () => {
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Get total number of escrows
       const totalEscrows = await contract.call("nextEscrowId");
@@ -435,7 +435,7 @@ export default function JobsPage() {
 
     setApplying(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       // Double-check with blockchain to prevent duplicate applications

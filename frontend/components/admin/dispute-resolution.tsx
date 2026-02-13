@@ -18,7 +18,7 @@ import {
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import {
   useNotifications,
   createMilestoneNotification,
@@ -77,7 +77,7 @@ export function DisputeResolution({
       if (showLoading) {
         setLoading(true);
       }
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       const disputes: Dispute[] = [];
@@ -127,7 +127,7 @@ export function DisputeResolution({
                 };
                 disputes.push(dispute);
               }
-            } catch (milestoneError) {}
+            } catch (milestoneError) { }
           }
         } catch (escrowError) {
           // Try to get milestone data directly even if escrow summary fails
@@ -163,7 +163,7 @@ export function DisputeResolution({
                 break;
               }
             }
-          } catch (directError) {}
+          } catch (directError) { }
         }
       }
 
@@ -174,9 +174,8 @@ export function DisputeResolution({
         const newDisputeCount = disputes.length - lastDisputeCount;
         toast({
           title: "New Disputes Detected",
-          description: `${newDisputeCount} new dispute${
-            newDisputeCount > 1 ? "s" : ""
-          } require${newDisputeCount > 1 ? "" : "s"} your attention`,
+          description: `${newDisputeCount} new dispute${newDisputeCount > 1 ? "s" : ""
+            } require${newDisputeCount > 1 ? "" : "s"} your attention`,
           variant: "destructive",
         });
       }
@@ -205,7 +204,7 @@ export function DisputeResolution({
 
     try {
       setIsResolving(true);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) {
         toast({
           title: "Contract Error",
@@ -280,28 +279,25 @@ export function DisputeResolution({
           freelancerGets > clientGets
             ? "Freelancer"
             : freelancerGets < clientGets
-            ? "Client"
-            : "Split";
+              ? "Client"
+              : "Split";
 
         const winnerMessage =
           winner === "Split"
             ? "Funds split 50/50"
-            : `${winner} wins (${
-                winner === "Freelancer"
-                  ? freelancerGets.toFixed(2)
-                  : clientGets.toFixed(2)
-              } tokens)`;
+            : `${winner} wins (${winner === "Freelancer"
+              ? freelancerGets.toFixed(2)
+              : clientGets.toFixed(2)
+            } tokens)`;
 
         // Add cross-wallet notification with winner and admin reason
         addCrossWalletNotification(
           {
             type: "dispute",
             title: "Dispute Resolved",
-            message: `Dispute #${
-              selectedDispute.escrowId
-            } resolved. ${winnerMessage}. ${
-              resolutionReason ? `Admin reason: ${resolutionReason}` : ""
-            }`,
+            message: `Dispute #${selectedDispute.escrowId
+              } resolved. ${winnerMessage}. ${resolutionReason ? `Admin reason: ${resolutionReason}` : ""
+              }`,
             actionUrl: `/dashboard?escrow=${selectedDispute.escrowId}`,
             data: {
               escrowId: selectedDispute.escrowId,
@@ -322,11 +318,9 @@ export function DisputeResolution({
           {
             type: "dispute",
             title: "Dispute Resolved",
-            message: `Dispute #${
-              selectedDispute.escrowId
-            } resolved. ${winnerMessage}. ${
-              resolutionReason ? `Admin reason: ${resolutionReason}` : ""
-            }`,
+            message: `Dispute #${selectedDispute.escrowId
+              } resolved. ${winnerMessage}. ${resolutionReason ? `Admin reason: ${resolutionReason}` : ""
+              }`,
             actionUrl: `/freelancer?escrow=${selectedDispute.escrowId}`,
             data: {
               escrowId: selectedDispute.escrowId,

@@ -8,7 +8,7 @@ import { useJobCreatorStatus } from "@/hooks/use-job-creator-status";
 import { usePendingApprovals } from "@/hooks/use-pending-approvals";
 import { useRouter } from "next/navigation";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ethers } from "ethers";
 import {
   useNotifications,
@@ -79,7 +79,7 @@ export default function ApprovalsPage() {
 
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const nextEscrowId = Number(await contract.call("nextEscrowId"));
       const myJobs: JobWithApplications[] = [];
 
@@ -142,12 +142,12 @@ export default function ApprovalsPage() {
                           if (
                             moreApplicationsData &&
                             moreApplicationsData.length >
-                              applicationsData.length
+                            applicationsData.length
                           ) {
                             // Use the alternative data if it has more applications
                             applicationsData = moreApplicationsData;
                           }
-                        } catch (altError) {}
+                        } catch (altError) { }
                       }
 
                       for (
@@ -182,38 +182,38 @@ export default function ApprovalsPage() {
                             const rawAppliedAt = getVal(app, "appliedAt", 3);
 
                             if (rawFreelancer && rawCoverLetter) {
-                                freelancerAddress = String(rawFreelancer);
-                                coverLetter = String(rawCoverLetter);
-                                proposedTimeline = Number(rawTimeline) || 0;
-                                appliedAt = Number(rawAppliedAt) || 0;
+                              freelancerAddress = String(rawFreelancer);
+                              coverLetter = String(rawCoverLetter);
+                              proposedTimeline = Number(rawTimeline) || 0;
+                              appliedAt = Number(rawAppliedAt) || 0;
                             } else {
-                                // Fallback for nested arrays (e.g. [[...]])
-                                const inner = Array.isArray(app) ? app[0] : undefined;
-                                if (Array.isArray(inner) && inner.length >= 4) {
-                                    freelancerAddress = String(inner[0]);
-                                    coverLetter = String(inner[1]);
-                                    proposedTimeline = Number(inner[2]);
-                                    appliedAt = Number(inner[3]);
+                              // Fallback for nested arrays (e.g. [[...]])
+                              const inner = Array.isArray(app) ? app[0] : undefined;
+                              if (Array.isArray(inner) && inner.length >= 4) {
+                                freelancerAddress = String(inner[0]);
+                                coverLetter = String(inner[1]);
+                                proposedTimeline = Number(inner[2]);
+                                appliedAt = Number(inner[3]);
+                              } else {
+                                // Don't throw immediately, check if app itself is the array
+                                if (Array.isArray(app) && app.length >= 4) {
+                                  freelancerAddress = String(app[0]);
+                                  coverLetter = String(app[1]);
+                                  proposedTimeline = Number(app[2]);
+                                  appliedAt = Number(app[3]);
                                 } else {
-                                     // Don't throw immediately, check if app itself is the array
-                                     if (Array.isArray(app) && app.length >= 4) {
-                                        freelancerAddress = String(app[0]);
-                                        coverLetter = String(app[1]);
-                                        proposedTimeline = Number(app[2]);
-                                        appliedAt = Number(app[3]);
-                                     } else {
-                                        throw new Error("Structure not recognized");
-                                     }
+                                  throw new Error("Structure not recognized");
                                 }
+                              }
                             }
                           } catch (parseError) {
-                              // Last resort fallback if structured parsing fails but we have an array-like object
-                              if (app && typeof app === 'object') {
-                                  freelancerAddress = String(app[0] || app['0'] || "");
-                                  coverLetter = String(app[1] || app['1'] || "");
-                                  proposedTimeline = Number(app[2] || app['2'] || 0);
-                                  appliedAt = Number(app[3] || app['3'] || 0);
-                              }
+                            // Last resort fallback if structured parsing fails but we have an array-like object
+                            if (app && typeof app === 'object') {
+                              freelancerAddress = String(app[0] || app['0'] || "");
+                              coverLetter = String(app[1] || app['1'] || "");
+                              proposedTimeline = Number(app[2] || app['2'] || 0);
+                              appliedAt = Number(app[3] || app['3'] || 0);
+                            }
                           }
 
                           // Ensure we have valid data
@@ -224,16 +224,15 @@ export default function ApprovalsPage() {
                           ) {
                             // If we still don't have an address, we can't show this application validly
                             // But we'll use a placeholder to at least show *something* happened
-                            freelancerAddress = "0x0000000000000000000000000000000000000000"; 
+                            freelancerAddress = "0x0000000000000000000000000000000000000000";
                           }
                           if (
                             !coverLetter ||
                             coverLetter === "" ||
                             coverLetter === "undefined"
                           ) {
-                            coverLetter = `Application ${
-                              appIndex + 1
-                            } - Cover letter data not available`;
+                            coverLetter = `Application ${appIndex + 1
+                              } - Cover letter data not available`;
                           }
                           if (
                             proposedTimeline === 0 ||
@@ -313,9 +312,8 @@ export default function ApprovalsPage() {
                             freelancerAddress: `0x${Math.random()
                               .toString(16)
                               .substr(2, 40)}`,
-                            coverLetter: `Application ${
-                              appIndex + 1
-                            } - Failed to parse from blockchain`,
+                            coverLetter: `Application ${appIndex + 1
+                              } - Failed to parse from blockchain`,
                             proposedTimeline: 30,
                             appliedAt: Date.now() - appIndex * 86400000,
                             status: "pending" as const,
@@ -348,9 +346,8 @@ export default function ApprovalsPage() {
                         freelancerAddress: `0x${Math.random()
                           .toString(16)
                           .substr(2, 40)}`,
-                        coverLetter: `Application ${
-                          appIndex + 1
-                        } - Failed to fetch from blockchain`,
+                        coverLetter: `Application ${appIndex + 1
+                          } - Failed to fetch from blockchain`,
                         proposedTimeline: 30,
                         appliedAt: Date.now() - appIndex * 86400000,
                         status: "pending" as const,
@@ -411,7 +408,7 @@ export default function ApprovalsPage() {
     setApproving(true);
 
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       if (!contract) {
         throw new Error("Contract instance not found");
@@ -455,8 +452,8 @@ export default function ApprovalsPage() {
 
       // Wait for transaction confirmation
       if (txHash && typeof window !== 'undefined' && window.ethereum) {
-          const provider = new ethers.BrowserProvider(window.ethereum as any);
-          await provider.waitForTransaction(txHash);
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        await provider.waitForTransaction(txHash);
       }
 
       // Refresh the jobs list
@@ -746,9 +743,8 @@ export default function ApprovalsPage() {
                     onMouseUp={(e) => {
                       e.stopPropagation();
                     }}
-                    className={`px-4 py-2 rounded-md text-white cursor-pointer bg-green-600 hover:bg-green-700 ${
-                      approving ? "opacity-75" : ""
-                    }`}
+                    className={`px-4 py-2 rounded-md text-white cursor-pointer bg-green-600 hover:bg-green-700 ${approving ? "opacity-75" : ""
+                      }`}
                     disabled={false}
                     style={{
                       pointerEvents: "auto",

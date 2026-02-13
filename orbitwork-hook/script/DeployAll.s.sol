@@ -5,7 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {HookMiner} from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
-import {SecureFlow} from "../src/core/SecureFlow.sol";
+import {OrbitWork} from "../src/core/OrbitWork.sol";
 import {EscrowHook} from "../src/EscrowHook.sol";
 
 contract DeployAll is Script {
@@ -20,10 +20,10 @@ contract DeployAll is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy SecureFlow (EscrowCore)
+        // 1. Deploy OrbitWork (EscrowCore)
         // Args: _monadToken (0x0 for native), _feeCollector, _platformFeeBP
-        SecureFlow secureFlow = new SecureFlow(address(0), deployer, 30);
-        console.log("SecureFlow deployed at:", address(secureFlow));
+        OrbitWork orbitWork = new OrbitWork(address(0), deployer, 30);
+        console.log("OrbitWork deployed at:", address(orbitWork));
 
         // 2. Mine Hook Salt with correct flags
         // Hook flags: beforeAddLiquidity + beforeRemoveLiquidity
@@ -31,7 +31,7 @@ contract DeployAll is Script {
             Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_SWAP_FLAG
         );
 
-        bytes memory hookConstructorArgs = abi.encode(POOL_MANAGER, address(secureFlow));
+        bytes memory hookConstructorArgs = abi.encode(POOL_MANAGER, address(orbitWork));
         (address hookAddress, bytes32 salt) = HookMiner.find(
             CREATE2_FACTORY, 
             flags, 
@@ -43,13 +43,13 @@ contract DeployAll is Script {
         console.log("Salt:", vm.toString(salt));
 
         // 3. Deploy EscrowHook
-        EscrowHook hook = new EscrowHook{salt: salt}(POOL_MANAGER, address(secureFlow));
+        EscrowHook hook = new EscrowHook{salt: salt}(POOL_MANAGER, address(orbitWork));
         require(address(hook) == hookAddress, "Hook address mismatch");
         console.log("EscrowHook deployed at:", address(hook));
 
-        // 4. Set Hook in SecureFlow
-        secureFlow.setEscrowHook(address(hook));
-        console.log("SecureFlow hook set to:", address(hook));
+        // 4. Set Hook in OrbitWork
+        orbitWork.setEscrowHook(address(hook));
+        console.log("OrbitWork hook set to:", address(hook));
 
         vm.stopBroadcast();
     }

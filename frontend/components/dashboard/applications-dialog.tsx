@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, User, Star, Briefcase, Calendar } from "lucide-react";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +53,7 @@ export function ApplicationsDialog({
         if (!open) return;
         setLoading(true);
         try {
-            const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+            const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
             const ratingsContract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
 
             const apps = await contract.call(
@@ -113,15 +113,15 @@ export function ApplicationsDialog({
         try {
             if (isSmartAccountReady) {
                 const { ethers } = await import("ethers");
-                const iface = new ethers.Interface(SECUREFLOW_ABI);
+                const iface = new ethers.Interface(ORBIT_WORK_ABI);
                 const data = iface.encodeFunctionData("acceptFreelancer", [
                     escrowId,
                     freelancer,
                 ]);
 
-                await executeTransaction(CONTRACTS.SECUREFLOW_ESCROW, data, "0");
+                await executeTransaction(CONTRACTS.ORBIT_WORK_ESCROW, data, "0");
             } else {
-                const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+                const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
                 const txHash = await contract.send(
                     "acceptFreelancer",
                     "no-value",

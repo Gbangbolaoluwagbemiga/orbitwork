@@ -45,19 +45,12 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }:
 
                 if (hookContract) {
                     try {
-                        // Try calculateYield first (view function)
-                        const yieldResult = await hookContract.call("calculateYield", escrowId);
-                        currentYield = Number(ethers.formatUnits(yieldResult, 18)); // Assuming 18 decimals like ETH
+                        // Use getEscrowYield (view function)
+                        const yieldResult = await hookContract.call("getEscrowYield", [escrowId]);
+                        currentYield = Number(ethers.formatUnits(yieldResult, 18)); // Assuming 18 decimals
                         isActive = true;
                     } catch (e) {
-                        try {
-                            // Fallback to yieldEarned mapping
-                            const yieldResult = await hookContract.call("yieldEarned", escrowId);
-                            currentYield = Number(ethers.formatUnits(yieldResult, 18));
-                            isActive = true;
-                        } catch (err) {
-                            console.warn("Failed to fetch yield data:", err);
-                        }
+                        console.warn("Failed to fetch yield data:", e);
                     }
                 }
 
@@ -75,7 +68,8 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }:
                     });
                 }
             } catch (error) {
-                console.error("Yield fetch error:", error);
+                // Squelch errors to avoid console spam (real yield is optional/bonus)
+                // console.warn("Yield fetch error:", error);
             }
         };
 

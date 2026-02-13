@@ -25,7 +25,7 @@ interface IEscrowHook {
         bytes32 salt;
     }
 
-    function addLiquidity(PoolKey calldata key, ModifyLiquidityParams calldata params) external;
+    function addLiquidity(uint256 escrowId, PoolKey calldata key, ModifyLiquidityParams calldata params) external;
     function removeLiquidity(PoolKey calldata key, ModifyLiquidityParams calldata params) external;
     
     // Productive Escrow Functions

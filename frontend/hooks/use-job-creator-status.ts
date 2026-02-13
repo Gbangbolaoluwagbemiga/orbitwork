@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 
 export function useJobCreatorStatus() {
   const { wallet, getContract } = useWeb3();
@@ -20,7 +20,7 @@ export function useJobCreatorStatus() {
   const checkJobCreatorStatus = async () => {
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) {
         setIsJobCreator(false);
         return;
@@ -35,10 +35,10 @@ export function useJobCreatorStatus() {
         for (let i = 1; i < escrowCount; i++) {
           try {
             const escrowSummary = await contract.call("getEscrowSummary", i);
-            
+
             // Check if current user is the depositor (job creator)
             const isMyJob = escrowSummary[0].toLowerCase() === wallet.address?.toLowerCase();
-            
+
             if (isMyJob) {
               setIsJobCreator(true);
               setLoading(false);
@@ -50,7 +50,7 @@ export function useJobCreatorStatus() {
           }
         }
       }
-      
+
       setIsJobCreator(false);
     } catch (error) {
       setIsJobCreator(false);

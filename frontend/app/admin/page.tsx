@@ -16,7 +16,7 @@ import { useWeb3 } from "@/contexts/web3-context";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS, UNICHAIN_SEPOLIA } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { DisputeResolution } from "@/components/admin/dispute-resolution";
 import {
   Lock,
@@ -64,7 +64,7 @@ export default function AdminPage() {
     string[]
   >(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("secureflow_whitelisted_tokens");
+      const stored = localStorage.getItem("orbitwork_whitelisted_tokens");
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -73,7 +73,7 @@ export default function AdminPage() {
     string[]
   >(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("secureflow_authorized_arbiters");
+      const stored = localStorage.getItem("orbitwork_authorized_arbiters");
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -83,7 +83,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(
-        "secureflow_whitelisted_tokens",
+        "orbitwork_whitelisted_tokens",
         JSON.stringify(knownWhitelistedTokens)
       );
     }
@@ -92,7 +92,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(
-        "secureflow_authorized_arbiters",
+        "orbitwork_authorized_arbiters",
         JSON.stringify(knownAuthorizedArbiters)
       );
     }
@@ -130,7 +130,7 @@ export default function AdminPage() {
 
   const fetchContractOwner = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
       const owner = await contract.call("owner");
       setContractOwner(owner?.toLowerCase() || null);
@@ -144,7 +144,7 @@ export default function AdminPage() {
     setIsRefreshing(true);
     console.log("🔄 Starting fetchContractStats...");
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) {
         console.error("❌ No contract instance available");
         setIsRefreshing(false);
@@ -320,8 +320,8 @@ export default function AdminPage() {
           try {
             provider = new ethers.JsonRpcProvider(rpcUrl);
             const contractWithProvider = new ethers.Contract(
-              CONTRACTS.SECUREFLOW_ESCROW,
-              SECUREFLOW_ABI,
+              CONTRACTS.ORBIT_WORK_ESCROW,
+              ORBIT_WORK_ABI,
               provider
             );
 
@@ -411,8 +411,8 @@ export default function AdminPage() {
         }
 
         const contractWithProvider = new ethers.Contract(
-          CONTRACTS.SECUREFLOW_ESCROW,
-          SECUREFLOW_ABI,
+          CONTRACTS.ORBIT_WORK_ESCROW,
+          ORBIT_WORK_ABI,
           provider!
         );
 
@@ -593,8 +593,8 @@ export default function AdminPage() {
           try {
             provider = new ethers.JsonRpcProvider(rpcUrl);
             const contractWithProvider = new ethers.Contract(
-              CONTRACTS.SECUREFLOW_ESCROW,
-              SECUREFLOW_ABI,
+              CONTRACTS.ORBIT_WORK_ESCROW,
+              ORBIT_WORK_ABI,
               provider
             );
 
@@ -696,8 +696,8 @@ export default function AdminPage() {
         }
 
         const contractWithProvider = new ethers.Contract(
-          CONTRACTS.SECUREFLOW_ESCROW,
-          SECUREFLOW_ABI,
+          CONTRACTS.ORBIT_WORK_ESCROW,
+          ORBIT_WORK_ABI,
           provider!
         );
 
@@ -1011,7 +1011,7 @@ export default function AdminPage() {
 
     setIsWhitelisting(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Check if already whitelisted
       const isWhitelistedRaw = await contract.call(
@@ -1063,12 +1063,12 @@ export default function AdminPage() {
 
       // Save to localStorage
       try {
-        const stored = localStorage.getItem('whitelistedTokens');
+        const stored = localStorage.getItem('orbitwork_whitelisted_tokens');
         const tokens: string[] = stored ? JSON.parse(stored) : [];
         const tokenLower = tokenAddress.toLowerCase();
         if (!tokens.includes(tokenLower)) {
           tokens.push(tokenLower);
-          localStorage.setItem('whitelistedTokens', JSON.stringify(tokens));
+          localStorage.setItem('orbitwork_whitelisted_tokens', JSON.stringify(tokens));
           console.log('✅ Saved to localStorage. Total:', tokens.length);
         }
       } catch (e) {
@@ -1111,7 +1111,7 @@ export default function AdminPage() {
 
     setIsAuthorizing(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Check if already authorized
       const isAuthorizedRaw = await contract.call(
@@ -1179,7 +1179,7 @@ export default function AdminPage() {
   const checkPausedStatus = async () => {
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const paused = await contract.call("paused");
 
       // Handle different possible return types - including Proxy objects
@@ -1243,7 +1243,7 @@ export default function AdminPage() {
         return;
       }
 
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       switch (actionType) {
         case "pause":
@@ -1481,7 +1481,7 @@ export default function AdminPage() {
             )}
             <p className="text-xs text-amber-600 mt-4">
               💡 <span className="font-semibold">Tip:</span> Make sure you're
-              connected with the wallet that deployed the SecureFlow contract.
+              connected with the wallet that deployed the OrbitWork contract.
               {/* Update the owner address in{" "} */}
               {/* <code className="bg-muted px-1 rounded">
                 contexts/web3-context.tsx
@@ -1553,7 +1553,7 @@ export default function AdminPage() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-xl text-muted-foreground mb-8">
-            Manage the SecureFlow escrow contract
+            Manage the OrbitWork escrow contract
           </p>
 
           {isPaused && (
@@ -1598,7 +1598,7 @@ export default function AdminPage() {
                   Contract Address
                 </p>
                 <p className="font-mono text-sm">
-                  {CONTRACTS.SECUREFLOW_ESCROW.slice(0, 20)}...
+                  {CONTRACTS.ORBIT_WORK_ESCROW.slice(0, 20)}...
                 </p>
               </div>
             </div>
@@ -1821,7 +1821,7 @@ export default function AdminPage() {
                   Contract Address
                 </Label>
                 <p className="font-mono text-sm bg-muted/50 p-3 rounded-lg">
-                  {CONTRACTS.SECUREFLOW_ESCROW}
+                  {CONTRACTS.ORBIT_WORK_ESCROW}
                 </p>
               </div>
               <div>

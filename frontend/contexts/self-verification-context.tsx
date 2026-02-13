@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 
 interface SelfVerificationContextType {
   isVerified: boolean;
@@ -78,7 +78,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       };
 
       const app = new SelfAppBuilder({
-        appName: "SecureFlow",
+        appName: "OrbitWork",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
         endpointType: autoEndpointType,
         endpoint: endpointOverride,
@@ -88,7 +88,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         devMode: devModeAuto,
         version: 2,
         chainID: 42220,
-        userDefinedData: `SecureFlow Verification - ${wallet.address.toLowerCase()}`,
+        userDefinedData: `OrbitWork Verification - ${wallet.address.toLowerCase()}`,
         disclosures: disclosuresPayload as any,
       }).build();
 
@@ -149,7 +149,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
 
     // Try to check from contract, but fail silently if not available
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Try to call the function, but catch errors silently
       try {
@@ -264,7 +264,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         if (isNowVerified) {
           // Get fresh timestamp
           try {
-            const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+            const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
             const timestamp = await contract.call("verificationTimestamp", wallet.address);
             
             setIsVerified(true);

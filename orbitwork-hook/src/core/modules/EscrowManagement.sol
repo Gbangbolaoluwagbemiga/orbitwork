@@ -188,25 +188,40 @@ abstract contract EscrowManagement is EscrowCore {
 
         // === Productive Escrow: Auto-LP Integration ===
         if (liquidEscrowEnabled && address(escrowHook) != address(0)) {
-            IEscrowHook.PoolKey memory key =escrowPoolKeys[escrowId];
-            if (key.currency0 != address(0) || key.currency1 != address(0)) {
-                // Approve hook to transfer tokens for LP
-                if (token != address(0)) {
-                    IERC20(token).forceApprove(address(escrowHook), totalAmount);
-                }
-                
-                // Trigger productive escrow: 80% LP, 20% reserve
-                // Hook will automatically split funds and create LP position
-                try escrowHook.onEscrowCreated(escrowId, totalAmount, key) returns (
-                    uint256 lpAmount,
-                    uint256 reserveAmount
-                ) {
-                    // Successfully created LP position with yield tracking
-                    // lpAmount = amount added to pool, reserveAmount = kept for payouts
-                } catch {
-                    // If hook fails, fall back to traditional escrow (no LP)
-                    // Funds remain in this contract
-                }
+            // Construct Pool Key if not set
+            // Default: Pair with Native Currency (address(0))
+            // Fee: 0.3% (3000)
+            // TickSpacing: 60
+            
+            address token0 = token;
+            address token1 = address(0); // Native
+            if (token0 > token1) {
+                (token0, token1) = (token1, token0);
+            }
+            
+            IEscrowHook.PoolKey memory key = IEscrowHook.PoolKey({
+                currency0: token0,
+                currency1: token1,
+                fee: 3000,
+                tickSpacing: 60,
+                hooks: address(escrowHook)
+            });
+
+            // Approve hook to transfer tokens for LP
+            if (token != address(0)) {
+                IERC20(token).forceApprove(address(escrowHook), totalAmount);
+            }
+            
+            // Trigger productive escrow: 80% LP, 20% reserve
+            // Hook will automatically split funds and create LP position
+            try escrowHook.onEscrowCreated(escrowId, totalAmount, key) returns (
+                uint256,
+                uint256
+            ) {
+                // Successfully created LP position with yield tracking
+            } catch {
+                // If hook fails, fall back to traditional escrow (no LP)
+                // Funds remain in this contract
             }
         }
 

@@ -12,7 +12,7 @@ import { useDelegation } from "./delegation-context";
 import { useToast } from "@/hooks/use-toast";
 import { ethers } from "ethers";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 
 interface SmartAccountState {
   isInitialized: boolean;
@@ -202,16 +202,16 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
       console.log("Total gas cost:", ethers.formatEther(totalGasCost), "MON");
 
       // Execute the transaction through Smart Account delegation
-      // Decode function and args when targeting SecureFlow, then invoke delegated execution
+      // Decode function and args when targeting OrbitWork, then invoke delegated execution
       let txResponse: any;
       try {
         const fromAddress = await signer.getAddress();
         console.log("From address:", fromAddress);
 
-        // Only handle delegation flow for SecureFlow contract where we have the ABI
-        if (to.toLowerCase() === CONTRACTS.SECUREFLOW_ESCROW.toLowerCase()) {
-          console.log("Processing SecureFlow contract call");
-          const iface = new ethers.Interface(SECUREFLOW_ABI);
+        // Only handle delegation flow for OrbitWork contract where we have the ABI
+        if (to.toLowerCase() === CONTRACTS.ORBIT_WORK_ESCROW.toLowerCase()) {
+          console.log("Processing OrbitWork contract call");
+          const iface = new ethers.Interface(ORBIT_WORK_ABI);
           const parsed = iface.parseTransaction({ data });
           if (!parsed) {
             throw new Error("Failed to parse transaction data");
@@ -424,7 +424,7 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
         const sponsorTx = await paymasterContract.sponsorGas(
           await signer.getAddress(),
           totalGasCost,
-          "SecureFlow gasless batch transaction"
+          "OrbitWork gasless batch transaction"
         );
 
         await sponsorTx.wait();

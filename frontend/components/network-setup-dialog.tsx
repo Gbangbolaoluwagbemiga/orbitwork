@@ -91,7 +91,7 @@ export function NetworkSetupDialog({
             Unichain Network Required
           </DialogTitle>
           <DialogDescription className="pt-2">
-            To use SecureFlow, you need to add and connect to the Unichain Sepolia
+            To use OrbitWork, you need to add and connect to the Unichain Sepolia
             network in your wallet.
           </DialogDescription>
         </DialogHeader>

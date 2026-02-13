@@ -1,6 +1,6 @@
-import secureFlowAbi from "./secureflow-abi.json";
+import orbitWorkAbi from "./orbitwork-abi.json";
 
-export const SECUREFLOW_ABI = secureFlowAbi;
+export const ORBIT_WORK_ABI = orbitWorkAbi;
 
 export const ERC20_ABI = [
   {
@@ -51,4 +51,37 @@ export const ERC20_ABI = [
     stateMutability: "view",
     type: "function",
   },
+] as const;
+
+export const ESCROW_HOOK_ABI = [
+  {
+    inputs: [{ internalType: "uint256", name: "escrowId", type: "uint256" }],
+    name: "getEscrowYield",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "escrowPositions",
+    outputs: [
+      {
+        internalType: "struct IEscrowHook.PoolKey", name: "key", type: "tuple", components: [
+          { name: "currency0", type: "address" },
+          { name: "currency1", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" }
+        ]
+      },
+      { internalType: "uint128", name: "liquidity", type: "uint128" },
+      { internalType: "uint256", name: "reserveAmount", type: "uint256" },
+      { internalType: "uint256", name: "token0FeeGrowthLast", type: "uint256" },
+      { internalType: "uint256", name: "token1FeeGrowthLast", type: "uint256" },
+      { internalType: "uint256", name: "yieldAccumulated", type: "uint256" },
+      { internalType: "bool", name: "isActive", type: "bool" }
+    ],
+    stateMutability: "view",
+    type: "function",
+  }
 ] as const;

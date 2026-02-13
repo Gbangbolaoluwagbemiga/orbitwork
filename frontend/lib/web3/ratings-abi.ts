@@ -231,7 +231,7 @@ export const ORBITWORK_RATINGS_ABI = [
         "name": "secureFlow",
         "outputs": [
             {
-                "internalType": "contract ISecureFlow",
+                "internalType": "contract IOrbitWork",
                 "name": "",
                 "type": "address"
             }

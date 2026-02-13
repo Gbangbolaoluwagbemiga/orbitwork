@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../interfaces/ISecureFlow.sol";
+import "../interfaces/IOrbitWork.sol";
 
 contract OrbitworkRatings {
-    ISecureFlow public secureFlow;
+    IOrbitWork public orbitWork;
 
     struct Rating {
         uint256 escrowId;
@@ -22,20 +22,20 @@ contract OrbitworkRatings {
 
     event RatingSubmitted(address indexed rater, address indexed rated, uint256 escrowId, uint8 score);
 
-    constructor(address _secureFlow) {
-        secureFlow = ISecureFlow(_secureFlow);
+    constructor(address _orbitWork) {
+        orbitWork = IOrbitWork(_orbitWork);
     }
 
     function rateTransaction(uint256 escrowId, uint8 score, string calldata comment) external {
         require(score >= 1 && score <= 5, "Invalid score");
         require(!hasRated[escrowId][msg.sender], "Already rated");
 
-        // Verify escrow status via SecureFlow
+        // Verify escrow status via OrbitWork
         (
             address depositor,
             address beneficiary,
             , // arbiters
-            ISecureFlow.EscrowStatus status,
+            IOrbitWork.EscrowStatus status,
             , // totalAmount
             , // paidAmount
             , // remaining
@@ -47,11 +47,11 @@ contract OrbitworkRatings {
             , // isOpenJob
             , // projectTitle
             // projectDescription
-        ) = secureFlow.getEscrowSummary(escrowId);
+        ) = orbitWork.getEscrowSummary(escrowId);
 
         require(
-            status == ISecureFlow.EscrowStatus.Released || 
-            status == ISecureFlow.EscrowStatus.Refunded, 
+            status == IOrbitWork.EscrowStatus.Released || 
+            status == IOrbitWork.EscrowStatus.Refunded, 
             "Escrow not completed"
         );
 

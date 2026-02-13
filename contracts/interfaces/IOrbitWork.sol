@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-interface ISecureFlow {
+interface IOrbitWork {
     // ===== Enums =====
     enum EscrowStatus { Pending, InProgress, Released, Refunded, Disputed, Expired }
     enum MilestoneStatus { NotStarted, Submitted, Approved, Disputed, Resolved, Rejected }
@@ -184,6 +184,12 @@ interface ISecureFlow {
         string calldata reason
     ) external;
     function resolveDispute(uint256 escrowId, uint256 milestoneIndex, uint256 beneficiaryAmount, string calldata resolutionReason) external;
+    function refundEscrow(uint256 escrowId) external;
+    function emergencyRefundAfterDeadline(uint256 escrowId) external;
+
+    // ===== Marketplace Functions =====
+    function applyToJob(uint256 escrowId, string calldata coverLetter, uint256 proposedTimeline) external;
+    function acceptFreelancer(uint256 escrowId, address freelancer) external;
 
     // ===== View Functions =====
     function getEscrowSummary(uint256 escrowId) external view returns (
@@ -204,7 +210,15 @@ interface ISecureFlow {
         string memory projectDescription
     );
 
-
+    function getMilestones(uint256 escrowId) external view returns (Milestone[] memory);
+    function getUserEscrows(address user) external view returns (uint256[] memory);
+    function getApplicationsPage(
+        uint256 escrowId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (Application[] memory);
+    function getApplicationCount(uint256 escrowId) external view returns (uint256);
+    function hasUserApplied(uint256 escrowId, address user) external view returns (bool);
     function getReputation(address user) external view returns (uint256);
     function getCompletedEscrows(address user) external view returns (uint256);
     function getWithdrawableFees(address token) external view returns (uint256);

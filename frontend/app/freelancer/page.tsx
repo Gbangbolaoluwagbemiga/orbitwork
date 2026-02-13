@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import {
   useNotifications,
@@ -174,7 +174,7 @@ export default function FreelancerPage() {
         return;
       }
 
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       if (!contract) {
         toast({
@@ -586,7 +586,7 @@ export default function FreelancerPage() {
 
   const startWork = async (escrowId: string) => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Get escrow details to debug
       try {
@@ -773,7 +773,7 @@ export default function FreelancerPage() {
 
     // Additional check: Get the current milestone status from contract
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const milestones = await contract.call("getMilestones", escrowId);
 
       if (milestones && milestones.length > milestoneIndex) {
@@ -804,7 +804,7 @@ export default function FreelancerPage() {
 
     try {
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       toast({
         title: "Submitting milestone...",
@@ -922,7 +922,7 @@ export default function FreelancerPage() {
 
     try {
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       toast({
         title: "Resubmitting milestone...",
@@ -1033,7 +1033,7 @@ export default function FreelancerPage() {
 
     try {
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       toast({
         title: "Opening dispute...",
@@ -1495,9 +1495,9 @@ export default function FreelancerPage() {
                                           <Star
                                             key={star}
                                             className={`h-3.5 w-3.5 ${star <=
-                                                escrowRatings[escrow.id].rating
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "text-gray-300"
+                                              escrowRatings[escrow.id].rating
+                                              ? "fill-yellow-400 text-yellow-400"
+                                              : "text-gray-300"
                                               }`}
                                           />
                                         ))}
@@ -1595,14 +1595,14 @@ export default function FreelancerPage() {
                                 <div
                                   key={index}
                                   className={`p-4 rounded-lg border-2 ${isApproved
-                                      ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                                      : isSubmitted
-                                        ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-                                        : isCurrent
-                                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                                          : isBlocked
-                                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                                            : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                                    : isSubmitted
+                                      ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                                      : isCurrent
+                                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                        : isBlocked
+                                          ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                                          : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
                                     }`}
                                 >
                                   <div className="flex items-center justify-between mb-2">

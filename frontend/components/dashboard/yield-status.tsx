@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, ShieldCheck, Zap } from "lucide-react";
 import { useWeb3 } from "@/contexts/web3-context";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { CONTRACTS } from "@/lib/web3/config";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,7 +18,7 @@ export function YieldStatus() {
     async function checkVerification() {
       if (wallet.isConnected && wallet.address) {
         try {
-          const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+          const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
           const verified = await contract.call("selfVerifiedUsers", wallet.address);
           setIsVerified(verified);
         } catch (error) {
@@ -97,8 +97,8 @@ export function YieldStatus() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {isVerified 
-                  ? "Identity verified via Self Protocol. Enjoy reduced protocol fees!" 
+                {isVerified
+                  ? "Identity verified via Self Protocol. Enjoy reduced protocol fees!"
                   : "Complete Self Protocol verification to reduce escrow fees."}
               </p>
             </>

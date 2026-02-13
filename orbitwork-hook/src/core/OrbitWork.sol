@@ -11,11 +11,11 @@ import "./modules/ViewFunctions.sol";
 import "./modules/RatingSystem.sol";
 
 /**
- * @title SecureFlow - Modular Hybrid Escrow + Marketplace Platform
+ * @title OrbitWork - Modular Hybrid Escrow + Marketplace Platform
  * @dev This contract combines all functionality through inheritance
  * @notice Modular design for better maintainability and readability
  */
-contract SecureFlow is 
+contract OrbitWork is 
     EscrowCore,
     EscrowManagement,
     WorkLifecycle,

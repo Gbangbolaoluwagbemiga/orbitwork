@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import {
   useNotifications,
@@ -148,7 +148,7 @@ export default function DashboardPage() {
     try {
       const { ethers } = await import("ethers");
       const { CONTRACTS, UNICHAIN_SEPOLIA } = await import("@/lib/web3/config");
-      const { SECUREFLOW_ABI } = await import("@/lib/web3/abis");
+      const { ORBIT_WORK_ABI } = await import("@/lib/web3/abis");
 
       // Try to get provider from wallet context or use RPC
       let provider: any = null;
@@ -170,8 +170,8 @@ export default function DashboardPage() {
       if (!provider) return null;
 
       const contractWithProvider = new ethers.Contract(
-        CONTRACTS.SECUREFLOW_ESCROW,
-        SECUREFLOW_ABI,
+        CONTRACTS.ORBIT_WORK_ESCROW,
+        ORBIT_WORK_ABI,
         provider
       );
 
@@ -628,7 +628,7 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Get total number of escrows
       const totalEscrows = await contract.call("nextEscrowId");
@@ -998,7 +998,7 @@ export default function DashboardPage() {
 
   const disputeMilestone = async (escrowId: string, milestoneIndex: number) => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
@@ -1044,7 +1044,7 @@ export default function DashboardPage() {
 
   const startWork = async (escrowId: string) => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       setSubmittingMilestone(escrowId);
@@ -1087,7 +1087,7 @@ export default function DashboardPage() {
 
   const openDispute = async (escrowId: string) => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       setSubmittingMilestone(escrowId);
@@ -1128,7 +1128,7 @@ export default function DashboardPage() {
       }
 
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       toast({
@@ -1242,7 +1242,7 @@ export default function DashboardPage() {
       }
 
       setSubmittingMilestone(`${escrowId}-${milestoneIndex}`);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       toast({

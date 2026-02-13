@@ -16,8 +16,8 @@ export const metadata = {
   description: "Decentralized Freelance Platform Powered by Uniswap v4 Hooks",
   url: typeof window !== "undefined"
     ? window.location.origin
-    : process.env.NEXT_PUBLIC_APP_URL || "https://secureflow.app",
-  icons: ["/secureflow-logo.svg"],
+    : process.env.NEXT_PUBLIC_APP_URL || "https://orbitwork.app",
+  icons: ["/orbitwork-logo.svg"],
 };
 
 // Define networks - Unichain Sepolia only (Uniswap v4 Hooks)

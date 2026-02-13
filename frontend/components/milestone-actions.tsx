@@ -20,7 +20,7 @@ import {
 } from "@/contexts/notification-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import {
   CheckCircle2,
   Send,
@@ -197,7 +197,7 @@ export function MilestoneActions({
 
     setIsLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       let txHash;
 
@@ -239,14 +239,14 @@ export function MilestoneActions({
           if (useSmartAccount) {
             // Use Smart Account for enhanced transaction
             const { ethers } = await import("ethers");
-            const iface = new ethers.Interface(SECUREFLOW_ABI);
+            const iface = new ethers.Interface(ORBIT_WORK_ABI);
             const data = iface.encodeFunctionData("submitMilestone", [
               escrowId,
               milestoneIndex,
               milestone.description,
             ]);
             txHash = await executeTransaction(
-              CONTRACTS.SECUREFLOW_ESCROW,
+              CONTRACTS.ORBIT_WORK_ESCROW,
               data,
             );
             toast({
@@ -332,7 +332,7 @@ export function MilestoneActions({
                 if (erContract) {
                   const result = await erContract.call(
                     "userRegistrations",
-                    CONTRACTS.SECUREFLOW_ESCROW,
+                    CONTRACTS.ORBIT_WORK_ESCROW,
                     wallet.address
                   );
 
@@ -347,13 +347,13 @@ export function MilestoneActions({
                     });
 
                     // 3. Generate signature for first-time users
-                    if (engagementRewards) {
-                      signature = await engagementRewards.signClaim(
-                        CONTRACTS.SECUREFLOW_ESCROW as `0x${string}`,
-                        "0x0000000000000000000000000000000000000000", // No inviter
-                        BigInt(validUntilBlock)
-                      );
-                    }
+                    // if (engagementRewards) {
+                    //   signature = await engagementRewards.signClaim(
+                    //     CONTRACTS.ORBIT_WORK_ESCROW as `0x${string}`,
+                    //     "0x0000000000000000000000000000000000000000", // No inviter
+                    //     BigInt(validUntilBlock)
+                    //   );
+                    // }
                   }
                 }
               } catch (err) {
@@ -365,7 +365,7 @@ export function MilestoneActions({
             if (useSmartAccount) {
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
-              const iface = new ethers.Interface(SECUREFLOW_ABI);
+              const iface = new ethers.Interface(ORBIT_WORK_ABI);
               const data = iface.encodeFunctionData("approveMilestone", [
                 escrowId,
                 milestoneIndex,
@@ -373,7 +373,7 @@ export function MilestoneActions({
                 signature,
               ]);
               txHash = await executeTransaction(
-                CONTRACTS.SECUREFLOW_ESCROW,
+                CONTRACTS.ORBIT_WORK_ESCROW,
                 data,
               );
               toast({
@@ -603,14 +603,14 @@ export function MilestoneActions({
             if (useSmartAccount) {
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
-              const iface = new ethers.Interface(SECUREFLOW_ABI);
+              const iface = new ethers.Interface(ORBIT_WORK_ABI);
               const data = iface.encodeFunctionData("rejectMilestone", [
                 escrowId,
                 milestoneIndex,
                 disputeReason,
               ]);
               txHash = await executeTransaction(
-                CONTRACTS.SECUREFLOW_ESCROW,
+                CONTRACTS.ORBIT_WORK_ESCROW,
                 data,
               );
               toast({
@@ -725,14 +725,14 @@ export function MilestoneActions({
             if (useSmartAccount) {
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
-              const iface = new ethers.Interface(SECUREFLOW_ABI);
+              const iface = new ethers.Interface(ORBIT_WORK_ABI);
               const data = iface.encodeFunctionData("resubmitMilestone", [
                 escrowId,
                 milestoneIndex,
                 resubmitMessage || milestone.description, // Use resubmit message or fallback to description
               ]);
               txHash = await executeTransaction(
-                CONTRACTS.SECUREFLOW_ESCROW,
+                CONTRACTS.ORBIT_WORK_ESCROW,
                 data,
               );
               toast({
@@ -834,14 +834,14 @@ export function MilestoneActions({
             if (useSmartAccount) {
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
-              const iface = new ethers.Interface(SECUREFLOW_ABI);
+              const iface = new ethers.Interface(ORBIT_WORK_ABI);
               const data = iface.encodeFunctionData("disputeMilestone", [
                 escrowId,
                 milestoneIndex,
                 disputeReason,
               ]);
               txHash = await executeTransaction(
-                CONTRACTS.SECUREFLOW_ESCROW,
+                CONTRACTS.ORBIT_WORK_ESCROW,
                 data,
               );
               toast({

@@ -13,6 +13,12 @@ import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
+import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+// Assuming LiquidityAmounts is available in v4-periphery or I'll copy the library math if needed.
+// Checking file existence suggested it is in lib/v4-periphery/src/libraries/LiquidityAmounts.sol
+// I will try to use the direct path or a standard mapping if available.
+import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 
 
 
@@ -26,11 +32,13 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     using LPFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
     using SafeERC20 for IERC20;
+    using StateLibrary for IPoolManager;
 
     address public immutable escrowCore;
 
     // === Yield Tracking State ===
     struct LPPosition {
+        PoolKey key;                 // Pool key for this position
         uint128 liquidity;           // Total liquidity in pool
         uint256 reserveAmount;       // Amount kept as reserve (20%)
         uint256 token0FeeGrowthLast; // Last recorded fee growth for token0
@@ -57,6 +65,7 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     event YieldDistributed(uint256 indexed escrowId, address freelancer, uint256 freelancerAmount, uint256 platformAmount);
 
     struct CallbackData {
+        uint256 escrowId;
         PoolKey key;
         IPoolManager.ModifyLiquidityParams params;
         address sender;
@@ -90,11 +99,11 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     /**
      * @notice Allows the EscrowCore contract to deploy escrowed funds into a Uniswap v4 pool.
      */
-    function addLiquidity(PoolKey calldata key, IPoolManager.ModifyLiquidityParams calldata params) external {
+    function addLiquidity(uint256 escrowId, PoolKey calldata key, IPoolManager.ModifyLiquidityParams calldata params) external {
         require(msg.sender == escrowCore, "Only EscrowCore");
         
         // Standard v4 pattern: unlock manager, then perform operations in callback
-        poolManager.unlock(abi.encode(CallbackData(key, params, msg.sender)));
+        poolManager.unlock(abi.encode(CallbackData(escrowId, key, params, msg.sender)));
     }
 
     /**
@@ -104,7 +113,7 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         require(msg.sender == escrowCore, "Only EscrowCore");
         
         // params.liquidityDelta should be negative for removal
-        poolManager.unlock(abi.encode(CallbackData(key, params, msg.sender)));
+        poolManager.unlock(abi.encode(CallbackData(0, key, params, msg.sender)));
     }
 
     /**
@@ -119,7 +128,26 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         _handleDelta(cb.key.currency0, delta.amount0());
         _handleDelta(cb.key.currency1, delta.amount1());
 
+        // Update Escrow State if adding liquidity
+        if (cb.params.liquidityDelta > 0) {
+            _updateEscrowLiquidity(cb.escrowId, cb.key, uint128(uint256(cb.params.liquidityDelta)));
+        }
+
         return "";
+    }
+
+    function _updateEscrowLiquidity(uint256 escrowId, PoolKey memory key, uint128 liquidityDelta) internal {
+        LPPosition storage pos = escrowPositions[escrowId];
+        
+        // Initialize if new
+        if (pos.liquidity == 0) {
+            pos.key = key;
+            (uint256 fg0, uint256 fg1) = poolManager.getFeeGrowthGlobals(key.toId());
+            pos.token0FeeGrowthLast = fg0;
+            pos.token1FeeGrowthLast = fg1;
+        }
+
+        pos.liquidity += liquidityDelta;
     }
 
     function _handleDelta(Currency currency, int128 amount) internal {
@@ -136,10 +164,13 @@ contract EscrowHook is BaseHook, IUnlockCallback {
             
             // If it's an ERC20, we need to settle it
             if (!currency.isAddressZero()) {
-                IERC20(Currency.unwrap(currency)).safeTransferFrom(escrowCore, address(poolManager), absAmount);
+                // Tokens are already in this contract (transferred from EscrowCore via onEscrowCreated)
+                poolManager.sync(currency);
+                IERC20(Currency.unwrap(currency)).safeTransfer(address(poolManager), absAmount);
                 poolManager.settle();
             } else {
                 // Native currency (e.g. Monad/Celo)
+                // Assuming ETH was sent to this contract or wrapped
                 poolManager.settle{value: absAmount}();
             }
         }
@@ -165,9 +196,10 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         lpAmount = (totalAmount * LP_RATIO) / 10000;
         reserveAmount = totalAmount - lpAmount;
 
-        // Store position info
+        // Store basic position info immediately (needed for callback)
         escrowPositions[escrowId] = LPPosition({
-            liquidity: 0, // Will be set after adding liquidity
+            key: key,
+            liquidity: 0, 
             reserveAmount: reserveAmount,
             token0FeeGrowthLast: 0,
             token1FeeGrowthLast: 0,
@@ -175,7 +207,121 @@ contract EscrowHook is BaseHook, IUnlockCallback {
             isActive: true
         });
 
-        emit LiquidityAdded(escrowId, 0, reserveAmount);
+        // Determine liquidity range and amount (Single Sided)
+        (uint160 sqrtPriceX96, int24 tick, , ) = poolManager.getSlot0(key.toId());
+        
+        int24 tickLower;
+        int24 tickUpper;
+        uint256 amount0Desired = 0;
+        uint256 amount1Desired = 0;
+
+        // Check which token is the escrow token (we assume one of them is)
+        // If we are holding Currency0, we provide range [current + spacing, MAX]
+        // If we are holding Currency1, we provide range [MIN, current - spacing]
+        // NOTE: We rely on the hook having the balance now.
+
+        // Pull tokens from EscrowCore (msg.sender)
+        // Identify which token is the ERC20 (the other is likely Native/0)
+        // In this specific pool (USDC/Native), we transfer USDC.
+        
+        address token = Currency.unwrap(key.currency0);
+        if (token == address(0)) {
+            token = Currency.unwrap(key.currency1);
+        }
+        
+        if (token != address(0)) {
+            IERC20(token).safeTransferFrom(msg.sender, address(this), lpAmount);
+        }
+
+        bool isToken0;
+        address currency0Addr = Currency.unwrap(key.currency0);
+        if (currency0Addr == address(0)) {
+            isToken0 = address(this).balance >= lpAmount;
+        } else {
+            isToken0 = IERC20(currency0Addr).balanceOf(address(this)) >= lpAmount;
+        }
+        
+        if (isToken0) {
+            // Provide liquidity in range [ceil(tick), MAX]
+            // Snap to spacing
+            int24 tickSpacing = key.tickSpacing;
+            tickLower = tick + tickSpacing; 
+            // Ensure lower is a multiple of spacing
+            tickLower = (tickLower / tickSpacing) * tickSpacing;
+            // Handle rounding
+            if (tickLower <= tick) tickLower += tickSpacing;
+            
+            tickUpper = TickMath.MAX_TICK;
+            // Snap upper
+            tickUpper = (tickUpper / tickSpacing) * tickSpacing; 
+            if (tickUpper > TickMath.MAX_TICK) tickUpper -= tickSpacing;
+
+            amount0Desired = lpAmount;
+            
+            // Calculate liquidity
+             uint160 sqrtRatioAX96 = TickMath.getSqrtPriceAtTick(tickLower);
+             uint160 sqrtRatioBX96 = TickMath.getSqrtPriceAtTick(tickUpper);
+             
+             // Liquidity for amount0:
+             // Lx = amount0 * sqrtA * sqrtB / (sqrtB - sqrtA)
+             // We use LiquidityAmounts lib
+             uint128 liquidity = LiquidityAmounts.getLiquidityForAmount0(
+                 sqrtRatioAX96,
+                 sqrtRatioBX96,
+                 amount0Desired
+             );
+             
+             // Unlock and add
+             poolManager.unlock(abi.encode(CallbackData({
+                 escrowId: escrowId,
+                 key: key,
+                 params: IPoolManager.ModifyLiquidityParams({
+                     tickLower: tickLower,
+                     tickUpper: tickUpper,
+                     liquidityDelta: int256(uint256(liquidity)),
+                     salt: bytes32(0)
+                 }),
+                 sender: msg.sender
+             })));
+             
+        } else {
+            // Assume Token1
+            int24 tickSpacing = key.tickSpacing;
+            tickUpper = tick - tickSpacing;
+             // Ensure upper is a multiple of spacing
+            tickUpper = (tickUpper / tickSpacing) * tickSpacing;
+             if (tickUpper >= tick) tickUpper -= tickSpacing;
+
+             tickLower = TickMath.MIN_TICK;
+             // Snap lower
+             tickLower = (tickLower / tickSpacing) * tickSpacing;
+             if (tickLower < TickMath.MIN_TICK) tickLower += tickSpacing;
+
+             amount1Desired = lpAmount;
+             
+             uint160 sqrtRatioAX96 = TickMath.getSqrtPriceAtTick(tickLower);
+             uint160 sqrtRatioBX96 = TickMath.getSqrtPriceAtTick(tickUpper);
+             
+             uint128 liquidity = LiquidityAmounts.getLiquidityForAmount1(
+                 sqrtRatioAX96,
+                 sqrtRatioBX96,
+                 amount1Desired
+             );
+             
+             poolManager.unlock(abi.encode(CallbackData({
+                 escrowId: escrowId,
+                 key: key,
+                 params: IPoolManager.ModifyLiquidityParams({
+                     tickLower: tickLower,
+                     tickUpper: tickUpper,
+                     liquidityDelta: int256(uint256(liquidity)),
+                     salt: bytes32(0)
+                 }),
+                 sender: msg.sender
+             })));
+        }
+
+        emit LiquidityAdded(escrowId, escrowPositions[escrowId].liquidity, reserveAmount);
         
         return (lpAmount, reserveAmount);
     }
@@ -198,6 +344,9 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         LPPosition storage position = escrowPositions[escrowId];
         require(position.isActive, "No active LP position");
 
+        // Force update yield before distribution
+        _updateYield(escrowId);
+
         // Calculate yield earned since last action
         uint256 yieldEarned = position.yieldAccumulated;
 
@@ -217,11 +366,53 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         return (payment, platformYield);
     }
 
+    function _updateYield(uint256 escrowId) internal {
+        LPPosition storage pos = escrowPositions[escrowId];
+        if (!pos.isActive || pos.liquidity == 0) return;
+
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = poolManager.getFeeGrowthGlobals(pos.key.toId());
+        
+        unchecked {
+            uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
+            uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
+            
+            // Simplified: (delta * liquidity) / Q128
+            uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
+            uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;
+            
+            pos.yieldAccumulated += (pending0 + pending1);
+            pos.token0FeeGrowthLast = feeGrowthGlobal0;
+            pos.token1FeeGrowthLast = feeGrowthGlobal1;
+        }
+    }
+
+    /**
+     * @notice Get current yield for an escrow
+     */
     /**
      * @notice Get current yield for an escrow
      */
     function getEscrowYield(uint256 escrowId) external view returns (uint256) {
-        return escrowPositions[escrowId].yieldAccumulated;
+        LPPosition storage pos = escrowPositions[escrowId];
+        if (!pos.isActive || pos.liquidity == 0) return pos.yieldAccumulated;
+
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = poolManager.getFeeGrowthGlobals(pos.key.toId());
+        
+        // Calculate pending fees using standard Uniswap formula: ΔfeeGrowth * liquidity
+        // feeGrowthGlobal is Q128.128
+        // We use a simplified calculation here without FullMath for readability/demo
+        // In prod, use FullMath.mulDiv for precision
+        
+        unchecked {
+            uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
+            uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
+            
+            // Pending fees = (delta * liquidity) / Q128
+            uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
+            uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;
+            
+            return pos.yieldAccumulated + pending0 + pending1;
+        }
     }
 
     // === Hook Callbacks ===

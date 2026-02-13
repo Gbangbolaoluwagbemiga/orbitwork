@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONTRACTS, ZERO_ADDRESS, UNICHAIN_SEPOLIA } from "@/lib/web3/config";
-import { SECUREFLOW_ABI, ERC20_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI, ERC20_ABI } from "@/lib/web3/abis";
 import { useRouter } from "next/navigation";
 import { ProjectDetailsStep } from "@/components/create/project-details-step";
 import { MilestonesStep } from "@/components/create/milestones-step";
@@ -80,7 +80,7 @@ export default function CreateEscrowPage() {
 
   const checkContractPauseStatus = async () => {
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const paused = await contract.call("paused");
 
       let isPaused = false;
@@ -123,12 +123,12 @@ export default function CreateEscrowPage() {
         },
       };
 
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Load cached tokens from localStorage (shared with admin page)
       let cachedTokens: string[] = [];
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("secureflow_whitelisted_tokens");
+        const stored = localStorage.getItem("orbitwork_whitelisted_tokens");
         if (stored) {
           try {
             cachedTokens = JSON.parse(stored);
@@ -278,8 +278,8 @@ export default function CreateEscrowPage() {
         console.log("🔍 Checking recent events (last 500k blocks) in background...");
         const provider = new ethers.JsonRpcProvider(UNICHAIN_SEPOLIA.rpcUrls[0]);
         const contractWithProvider = new ethers.Contract(
-          CONTRACTS.SECUREFLOW_ESCROW,
-          SECUREFLOW_ABI,
+          CONTRACTS.ORBIT_WORK_ESCROW,
+          ORBIT_WORK_ABI,
           provider
         );
 
@@ -425,7 +425,7 @@ export default function CreateEscrowPage() {
         // Update localStorage with all verified tokens
         if (typeof window !== "undefined" && allWhitelistedTokens.length > 0) {
           localStorage.setItem(
-            "secureflow_whitelisted_tokens",
+            "orbitwork_whitelisted_tokens",
             JSON.stringify(allWhitelistedTokens)
           );
           console.log("💾 Updated localStorage with all verified tokens");
@@ -438,7 +438,7 @@ export default function CreateEscrowPage() {
       // Update localStorage cache with verified tokens (already done above if events succeeded)
       if (typeof window !== "undefined" && allWhitelistedTokens.length > 0) {
         localStorage.setItem(
-          "secureflow_whitelisted_tokens",
+          "orbitwork_whitelisted_tokens",
           JSON.stringify(allWhitelistedTokens)
         );
         console.log("💾 Updated localStorage cache with verified tokens");
@@ -869,8 +869,8 @@ export default function CreateEscrowPage() {
           // Native tokens (ZERO_ADDRESS) are always allowed by the contract
           try {
             const escrowContract = getContract(
-              CONTRACTS.SECUREFLOW_ESCROW,
-              SECUREFLOW_ABI
+              CONTRACTS.ORBIT_WORK_ESCROW,
+              ORBIT_WORK_ABI
             );
             const isWhitelisted = await escrowContract.call(
               "whitelistedTokens",
@@ -1063,7 +1063,7 @@ export default function CreateEscrowPage() {
 
         try {
           console.log('💰 Approving tokens:', {
-            escrowContract: CONTRACTS.SECUREFLOW_ESCROW,
+            escrowContract: CONTRACTS.ORBIT_WORK_ESCROW,
             amount: totalAmountInWei,
             amountFormatted: `${(Number(BigInt(totalAmountInWei)) / Number(BigInt(10 ** tokenDecimals))).toFixed(4)} ${tokenSymbol}`
           });
@@ -1075,7 +1075,7 @@ export default function CreateEscrowPage() {
           const approvalTx = await tokenContract.send(
             "approve",
             "no-value", // No native value for ERC20 approval
-            CONTRACTS.SECUREFLOW_ESCROW,
+            CONTRACTS.ORBIT_WORK_ESCROW,
             approvalAmount  // Approve slightly more than needed
           );
 
@@ -1135,8 +1135,8 @@ export default function CreateEscrowPage() {
       }
 
       const escrowContract = getContract(
-        CONTRACTS.SECUREFLOW_ESCROW,
-        SECUREFLOW_ABI
+        CONTRACTS.ORBIT_WORK_ESCROW,
+        ORBIT_WORK_ABI
       );
       const milestoneDescriptions = formData.milestones.map(
         (m) => m.description
@@ -1309,7 +1309,7 @@ export default function CreateEscrowPage() {
             if (isSmartAccountReady) {
               // Use Smart Account for gasless escrow creation
               const { ethers } = await import("ethers");
-              const iface = new ethers.Interface(SECUREFLOW_ABI);
+              const iface = new ethers.Interface(ORBIT_WORK_ABI);
               const data = iface.encodeFunctionData("createEscrowNative", [
                 beneficiaryAddress, // beneficiary parameter
                 arbiters, // arbiters parameter
@@ -1322,7 +1322,7 @@ export default function CreateEscrowPage() {
               ]);
 
               txHash = await executeTransaction(
-                CONTRACTS.SECUREFLOW_ESCROW,
+                CONTRACTS.ORBIT_WORK_ESCROW,
                 data,
                 (Number(totalAmountInWei) / 1e18).toString() // Convert wei to native token for value
               );
@@ -1385,7 +1385,7 @@ export default function CreateEscrowPage() {
         if (isSmartAccountReady) {
           // Use Smart Account for gasless ERC20 escrow creation
           const { ethers } = await import("ethers");
-          const iface = new ethers.Interface(SECUREFLOW_ABI);
+          const iface = new ethers.Interface(ORBIT_WORK_ABI);
           const data = iface.encodeFunctionData("createEscrow", [
             beneficiaryAddress, // beneficiary parameter
             arbiters, // arbiters parameter
@@ -1399,7 +1399,7 @@ export default function CreateEscrowPage() {
           ]);
 
           txHash = await executeTransaction(
-            CONTRACTS.SECUREFLOW_ESCROW,
+            CONTRACTS.ORBIT_WORK_ESCROW,
             data,
             "0" // No native token value for ERC20
           );

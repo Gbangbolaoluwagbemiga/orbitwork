@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
-import "../interfaces/ISecureFlow.sol";
+import "../interfaces/IOrbitWork.sol";
 
 import "../interfaces/IEscrowHook.sol";
 
-abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, ISecureFlow {
+abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 

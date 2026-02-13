@@ -668,37 +668,52 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     return {
       async call(method: string, ...args: any[]) {
         try {
-          // Try using wallet provider first (more reliable)
+          // Use wallet provider if available (best)
           if (typeof window !== "undefined" && window.ethereum) {
             try {
               const walletProvider = new ethers.BrowserProvider(
                 window.ethereum as unknown as Eip1193Provider
               );
+
+              // Check if code exists at address BEFORE calling (prevents missing revert data)
+              const code = await walletProvider.getCode(targetAddress);
+              if (code === "0x") {
+                console.warn(`No code at ${targetAddress} on this network`);
+                // Return dummy data or throw properly
+                throw new Error("Contract not found on this network");
+              }
+
               const contract = new ethers.Contract(
                 targetAddress,
                 abi,
                 walletProvider
               );
-              // console.log(`Calling ${method} on ${targetAddress} with args:`, args);
               const result = await contract[method](...args);
               return result;
-            } catch (walletError) {
+            } catch (walletError: any) {
               console.warn(
-                "Wallet provider call failed, trying RPC:",
-                walletError
+                `Wallet call failed for ${method}:`,
+                walletError.message || walletError
               );
+              // Do NOT fallback to RPC if it was a revert/call exception (logic error)
+              // Only fallback if connection error
+              if (walletError.code === "CALL_EXCEPTION" || walletError.message?.includes("revert")) {
+                throw walletError;
+              }
             }
           }
 
           // Fallback to direct RPC connection
           const provider = new ethers.JsonRpcProvider(UNICHAIN_SEPOLIA.rpcUrls[0]);
-          const contract = new ethers.Contract(targetAddress, abi, provider);
+          const code = await provider.getCode(targetAddress);
+          if (code === "0x") throw new Error("Contract not found on RPC");
 
-          // Call the contract method directly
+          const contract = new ethers.Contract(targetAddress, abi, provider);
           const result = await contract[method](...args);
           return result;
-        } catch (error) {
-          console.error(`Contract call error for ${method}:`, error);
+        } catch (error: any) {
+          // Avoid formatting undefined error objects
+          console.error(`Contract call error for ${method}:`, error.message || "Unknown error");
           throw error;
         }
       },

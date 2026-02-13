@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { ethers } from "ethers";
 
 // Lazy-load Self Protocol Verifier to avoid build-time issues
@@ -48,7 +48,7 @@ function getProvider() {
 // Get contract instance
 function getContract() {
   const provider = getProvider();
-  return new ethers.Contract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI, provider);
+  return new ethers.Contract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI, provider);
 }
 
 export async function POST(request: NextRequest) {
@@ -336,6 +336,6 @@ export async function GET() {
     mode,
     service: "Self Protocol Verification",
     endpoint: "/api/self/verify",
-    contract: CONTRACTS.SECUREFLOW_ESCROW,
+    contract: CONTRACTS.ORBIT_WORK_ESCROW,
   });
 }

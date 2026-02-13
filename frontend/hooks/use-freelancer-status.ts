@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 
 export function useFreelancerStatus() {
   const { wallet, getContract } = useWeb3();
@@ -20,7 +20,7 @@ export function useFreelancerStatus() {
   const checkFreelancerStatus = async () => {
     setLoading(true);
     try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) {
         setIsFreelancer(false);
         return;

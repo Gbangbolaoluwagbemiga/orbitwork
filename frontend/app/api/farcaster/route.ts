@@ -24,7 +24,7 @@ export async function GET() {
     },
     miniapp: {
       version: "1",
-      name: "SecureFlow",
+      name: "OrbitWork",
       homeUrl: URL,
       iconUrl: `${URL}/secureflow-favicon.svg?v=2`,
       splashImageUrl: `${URL}/secureflow-favicon.svg?v=2`,
@@ -42,7 +42,7 @@ export async function GET() {
       tags: ["escrow", "freelance", "base", "web3", "payments"],
       heroImageUrl: `${URL}/secureflow-favicon.svg?v=2`,
       tagline: "Trustless payments, milestones",
-      ogTitle: "SecureFlow - Trustless Escrow",
+      ogTitle: "OrbitWork - Trustless Escrow",
       ogDescription:
         "Decentralized freelance marketplace with transparent milestone payments powered by Base blockchain.",
       ogImageUrl: `${URL}/secureflow-favicon.svg?v=2`,

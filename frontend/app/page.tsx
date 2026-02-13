@@ -7,7 +7,7 @@ import { ArrowRight, Shield, CheckCircle2, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 import { motion } from "framer-motion";
 
 export default function HomePage() {
@@ -30,7 +30,7 @@ export default function HomePage() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
 
       // Get total number of escrows
       const totalEscrows = await contract.call("nextEscrowId");
@@ -221,7 +221,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">
-              How SecureFlow Works
+              How OrbitWork Works
             </h2>
             <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">
               Simple, secure, and transparent escrow for the Web3 era
@@ -297,7 +297,7 @@ export default function HomePage() {
               Ready to secure your next project?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 text-pretty max-w-2xl mx-auto">
-              Join hundreds of freelancers and clients using SecureFlow for
+              Join hundreds of freelancers and clients using OrbitWork for
               trustless payments
             </p>
             <Link href="/create">

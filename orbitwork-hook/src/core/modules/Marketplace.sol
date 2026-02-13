@@ -30,7 +30,7 @@ abstract contract Marketplace is EscrowCore {
         // Get freelancer rating - will be 0 if no ratings yet
         uint256 avgRating = 0;
         uint256 totalRatings = 0;
-        // Note: RatingSystem will be available through inheritance in SecureFlow
+        // Note: RatingSystem will be available through inheritance in OrbitWork
         // For now, we'll set defaults and RatingSystem will handle the actual rating logic
         
         escrowApplications[escrowId].push(Application({
