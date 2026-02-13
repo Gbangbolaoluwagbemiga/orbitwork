@@ -28,7 +28,7 @@ contract DeployAll is Script {
         // 2. Mine Hook Salt with correct flags
         // Hook flags: beforeAddLiquidity + beforeRemoveLiquidity
         uint160 flags = uint160(
-            Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
+            Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_SWAP_FLAG
         );
 
         bytes memory hookConstructorArgs = abi.encode(POOL_MANAGER, address(secureFlow));

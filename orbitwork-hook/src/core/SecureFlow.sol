@@ -19,6 +19,7 @@ contract SecureFlow is
     EscrowCore,
     EscrowManagement,
     WorkLifecycle,
+    Marketplace,
     AdminFunctions,
     ViewFunctions
 {

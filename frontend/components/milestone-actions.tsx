@@ -31,7 +31,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Milestone } from "@/lib/web3/types";
-import { useEngagementRewards } from "@goodsdks/engagement-sdk";
+// import { useEngagementRewards } from "@goodsdks/engagement-sdk";
 
 // Production Engagement Rewards Contract
 const ENGAGEMENT_REWARDS_ADDRESS = "0x25db74CF4E7BA120526fd87e159CF656d94bAE43";
@@ -67,14 +67,9 @@ export function MilestoneActions({
 }: MilestoneActionsProps) {
   const { getContract, wallet } = useWeb3();
 
-  // Try to use engagement rewards if wagmi provider exists, otherwise null
-  let engagementRewards = null;
-  try {
-    engagementRewards = useEngagementRewards(ENGAGEMENT_REWARDS_ADDRESS);
-  } catch (error) {
-    // Wagmi provider not available, engagement rewards will be disabled
-    console.warn('Engagement rewards disabled: wagmi provider not found');
-  }
+  // Engagement rewards hook removed as it requires Wagmi provider
+  // We'll reimplement this once we have a proper Wagmi setup or compatible SDK
+  const engagementRewards = null;
 
   const { executeTransaction, executeBatchTransaction, isSmartAccountReady } =
     useSmartAccount();

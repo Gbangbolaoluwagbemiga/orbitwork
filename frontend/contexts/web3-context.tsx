@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import { UNICHAIN_SEPOLIA, DEFAULT_NETWORK, CONTRACTS } from "@/lib/web3/config";
@@ -26,6 +27,8 @@ interface Web3ContextType {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   switchToUnichain: () => Promise<void>;
+  switchToUnichainTestnet: () => Promise<void>;
+  addUnichainNetwork: () => Promise<boolean>;
   getContract: (address: string, abi: any) => any;
   isOwner: boolean;
 }
@@ -654,7 +657,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getContract = (address: string, abi: any) => {
+  const getContract = useCallback((address: string, abi: any) => {
     if (typeof window === "undefined" || !window.ethereum) return null;
     // Normalize address to a valid checksum to avoid INVALID_ARGUMENT errors
     let targetAddress = address;
@@ -676,6 +679,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
                 abi,
                 walletProvider
               );
+              // console.log(`Calling ${method} on ${targetAddress} with args:`, args);
               const result = await contract[method](...args);
               return result;
             } catch (walletError) {
@@ -802,7 +806,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         return "0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41";
       },
     };
-  };
+  }, []);
 
   const encodeFunction = (abi: any, method: string, args: any[]) => {
     try {

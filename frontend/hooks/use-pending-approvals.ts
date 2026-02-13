@@ -32,43 +32,57 @@ export function usePendingApprovals() {
 
       // Check if current wallet has any jobs with applications
       if (escrowCount > 1) {
-        for (let i = 1; i < escrowCount; i++) {
-          try {
-            const escrowSummary = await contract.call("getEscrowSummary", i);
+        // Fetch all escrow summaries in parallel to avoid N+1 problem
+        const batchSize = 20; // Process in batches to avoid rate limiting
+        let foundPending = false;
+
+        for (let i = 1; i < escrowCount; i += batchSize) {
+          if (foundPending) break;
+
+          const end = Math.min(i + batchSize, escrowCount);
+          const batchPromises = [];
+
+          for (let j = i; j < end; j++) {
+            batchPromises.push(
+              contract.call("getEscrowSummary", j).then((summary: any) => ({
+                id: j,
+                summary
+              })).catch(() => null)
+            );
+          }
+
+          const results = await Promise.all(batchPromises);
+
+          for (const res of results) {
+            if (!res) continue;
+
+            const { id, summary } = res;
 
             // Check if current user is the depositor (job creator)
-            const isMyJob =
-              escrowSummary[0].toLowerCase() === wallet.address?.toLowerCase();
+            const isMyJob = summary[0].toLowerCase() === wallet.address?.toLowerCase();
 
             if (isMyJob) {
               // Check if this is an open job (no freelancer assigned yet)
-              const isOpenJob =
-                escrowSummary[1] ===
-                "0x0000000000000000000000000000000000000000";
+              // isOpenJob is at index 12 based on other files, or check beneficiary address
+              const beneficiary = summary[1];
+              const isOpenJob = beneficiary === "0x0000000000000000000000000000000000000000";
 
               if (isOpenJob) {
-                // Check if there are applications for this job
                 try {
-                  const applicationCount = await contract.call(
-                    "getApplicationCount",
-                    i
-                  );
-                  const appCount = Number(applicationCount);
-
-                  if (appCount > 0) {
+                  // We still need to check application count
+                  // This has to be done sequentially or in a sub-batch if we want to be super fast
+                  // But typically user won't have THAT many open jobs
+                  const applicationCount = await contract.call("getApplicationCount", id);
+                  if (Number(applicationCount) > 0) {
                     setHasPendingApprovals(true);
                     setLoading(false);
                     return;
                   }
-                } catch (error) {
-                  // Skip if can't get application count
+                } catch (e) {
                   continue;
                 }
               }
             }
-          } catch (error) {
-            // Skip escrows that don't exist
-            continue;
           }
         }
       }

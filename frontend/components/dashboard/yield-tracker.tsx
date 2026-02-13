@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Droplet, Coins, Sparkles } from "lucide-react";
 
@@ -12,112 +13,154 @@ interface YieldTrackerProps {
     daysActive: number;
 }
 
-export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }: YieldTrackerProps) {
-    const [yieldData, setYieldData] = useState({
-        lpAmount: 0,
-        reserveAmount: 0,
-        yieldAccumulated: 0,
-        projectedYield: 0,
-        isActive: false,
-    });
+const { getContract } = useWeb3();
 
-    useEffect(() => {
-        // Calculate 80/20 split
-        const lpAmount = totalAmount * 0.8;
-        const reserveAmount = totalAmount * 0.2;
+// Convert simulated values to 0 initially
+useEffect(() => {
+    let mounted = true;
 
-        // Simulate yield accumulation (0.1% per day as estimate)
-        const dailyYieldRate = 0.001;
-        // Ensure daysActive is positive and reasonable
-        const validDaysActive = Math.max(0, Math.min(daysActive, 365)); // Cap at 1 year
-        const yieldAccumulated = lpAmount * dailyYieldRate * validDaysActive;
-        const projectedYield = lpAmount * dailyYieldRate * 21; // 21 day project
+    const fetchYieldData = async () => {
+        try {
+            // Calculate 80/20 split (static based on amount)
+            const lpAmount = totalAmount * 0.8;
+            const reserveAmount = totalAmount * 0.2;
 
-        setYieldData({
-            lpAmount,
-            reserveAmount,
-            yieldAccumulated,
-            projectedYield,
-            isActive: true,
-        });
-    }, [totalAmount, daysActive]);
+            // Fetch real yield from hook
+            const hookContract = getContract(CONTRACTS.ESCROW_HOOK, ESCROW_HOOK_ABI);
+            let currentYield = 0;
+            let isActive = false;
 
-    if (!yieldData.isActive) {
-        return null;
-    }
+            if (hookContract) {
+                try {
+                    // Try calculateYield first (view function)
+                    const yieldResult = await hookContract.call("calculateYield", escrowId);
+                    currentYield = Number(ethers.formatUnits(yieldResult, 18)); // Assuming 18 decimals like ETH
+                    isActive = true;
+                } catch (e) {
+                    try {
+                        // Fallback to yieldEarned mapping
+                        const yieldResult = await hookContract.call("yieldEarned", escrowId);
+                        currentYield = Number(ethers.formatUnits(yieldResult, 18));
+                        isActive = true;
+                    } catch (err) {
+                        console.warn("Failed to fetch yield data:", err);
+                    }
+                }
+            }
 
-    const freelancerYield = yieldData.yieldAccumulated * 0.7;
-    const platformYield = yieldData.yieldAccumulated * 0.3;
+            // If no connection or error, we default to 0 (no simulation)
+            // Project yield based on current rate if we have data, or 0
+            const projectedYield = currentYield > 0 ? currentYield * 21 : 0;
 
-    return (
-        <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Droplet className="h-5 w-5 text-emerald-500" />
-                            Productive Capital
-                        </CardTitle>
-                        <CardDescription>
-                            Your funds are earning yield in Uniswap V4
-                        </CardDescription>
-                    </div>
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Active
-                    </Badge>
+            if (mounted) {
+                setYieldData({
+                    lpAmount,
+                    reserveAmount,
+                    yieldAccumulated: currentYield,
+                    projectedYield,
+                    isActive: true, // Always show panel if we have basic data, even if yield is 0
+                });
+            }
+        } catch (error) {
+            console.error("Yield fetch error:", error);
+        }
+    };
+
+    fetchYieldData();
+
+    // Poll every 30s
+    const interval = setInterval(fetchYieldData, 30000);
+    return () => {
+        mounted = false;
+        clearInterval(interval);
+    };
+}, [totalAmount, daysActive, escrowId, getContract]);
+
+if (!yieldData.isActive) {
+    return null;
+}
+
+const freelancerYield = yieldData.yieldAccumulated * 0.7;
+const platformYield = yieldData.yieldAccumulated * 0.3;
+
+return (
+    <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent transition-all duration-300">
+        <CardHeader className="p-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Droplet className="h-4 w-4 text-emerald-500" />
+                        Productive Capital
+                        <Badge variant="outline" className="ml-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] h-5 px-1.5">
+                            <Sparkles className="h-2 w-2 mr-1" />
+                            Active
+                        </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-1">
+                        {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(4)} ${tokenSymbol}`}
+                    </CardDescription>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    {isExpanded ? (
+                        <TrendingUp className="h-4 w-4 text-emerald-500 transform rotate-180 transition-transform" />
+                    ) : (
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                    )}
+                </Button>
+            </div>
+        </CardHeader>
+
+        {isExpanded && (
+            <CardContent className="space-y-4 pt-0 p-4">
                 {/* LP Position */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">LP Position</p>
-                        <p className="text-2xl font-bold text-emerald-500">
+                        <p className="text-xs text-muted-foreground">LP Position</p>
+                        <p className="text-lg font-bold text-emerald-500">
                             {yieldData.lpAmount.toFixed(2)} {tokenSymbol}
                         </p>
-                        <p className="text-xs text-muted-foreground">80% in liquidity pool</p>
+                        <p className="text-[10px] text-muted-foreground">80% in liquidity pool</p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Reserve</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-xs text-muted-foreground">Reserve</p>
+                        <p className="text-lg font-bold">
                             {yieldData.reserveAmount.toFixed(2)} {tokenSymbol}
                         </p>
-                        <p className="text-xs text-muted-foreground">20% for payouts</p>
+                        <p className="text-[10px] text-muted-foreground">20% for payouts</p>
                     </div>
                 </div>
 
                 {/* Yield Stats */}
-                <div className="pt-4 border-t">
+                <div className="pt-3 border-t">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-emerald-500" />
-                            <span className="text-sm font-medium">Yield Earned</span>
+                            <TrendingUp className="h-3 w-3 text-emerald-500" />
+                            <span className="text-xs font-medium">Yield Earned</span>
                         </div>
-                        <span className="text-lg font-bold text-emerald-500">
+                        <span className="text-sm font-bold text-emerald-500">
                             +{yieldData.yieldAccumulated.toFixed(4)} {tokenSymbol}
                         </span>
                     </div>
 
                     {/* Distribution Breakdown */}
-                    <div className="space-y-2 mt-3 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs font-medium text-muted-foreground">Distribution (on milestone approval):</p>
-                        <div className="flex items-center justify-between text-sm">
+                    <div className="space-y-1.5 mt-2 p-2 bg-muted/50 rounded-lg">
+                        <p className="text-[10px] font-medium text-muted-foreground">Distribution (on milestone approval):</p>
+                        <div className="flex items-center justify-between text-xs">
                             <span className="flex items-center gap-1">
                                 <Coins className="h-3 w-3" />
                                 Freelancer (70%)
                             </span>
                             <span className="font-semibold">+{freelancerYield.toFixed(4)} {tokenSymbol}</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>Platform (30%)</span>
                             <span>{platformYield.toFixed(4)} {tokenSymbol}</span>
                         </div>
                     </div>
 
                     {/* Projected */}
-                    <div className="mt-3 p-2 bg-emerald-500/5 rounded border border-emerald-500/20">
-                        <div className="flex items-center justify-between text-xs">
+                    <div className="mt-2 p-1.5 bg-emerald-500/5 rounded border border-emerald-500/20">
+                        <div className="flex items-center justify-between text-[10px]">
                             <span className="text-muted-foreground">Projected Total Yield:</span>
                             <span className="font-semibold text-emerald-500">
                                 ~{yieldData.projectedYield.toFixed(4)} {tokenSymbol}
@@ -127,11 +170,12 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }:
                 </div>
 
                 {/* Active indicator */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>Earning swap fees for {daysActive} days</span>
                 </div>
             </CardContent>
-        </Card>
-    );
+        )}
+    </Card>
+);
 }

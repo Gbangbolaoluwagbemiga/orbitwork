@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI, ORBITWORK_RATINGS_ABI } from "@/lib/web3/abis";
+import { SECUREFLOW_ABI } from "@/lib/web3/abis";
+import { ORBITWORK_RATINGS_ABI } from "@/lib/web3/ratings-abi";
 import { ethers } from "ethers";
 import {
   useNotifications,
@@ -565,12 +566,10 @@ export default function JobsPage() {
       // Refresh the jobs list to update application counts
       await fetchOpenJobs();
 
-      // Refresh the ongoing projects count
-      await countOngoingProjects();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Application Failed",
-        description: "Could not submit your application. Please try again.",
+        description: error.message || "Could not submit your application. Please try again.",
         variant: "destructive",
       });
     } finally {

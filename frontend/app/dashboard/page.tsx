@@ -26,15 +26,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
-import { ProductiveCapitalStats } from "@/components/dashboard/productive-capital-stats";
 import { EscrowCard } from "@/components/dashboard/escrow-card";
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
 import { RateFreelancer } from "@/components/rating-freelancer";
 import {
   FilterSortControls,
   type SortOption,
+  type FilterStatus,
 } from "@/components/dashboard/filter-sort-controls";
-import { YieldStatus } from "@/components/dashboard/yield-status";
 import { ApplicationsDialog } from "@/components/dashboard/applications-dialog";
 
 export default function DashboardPage() {
@@ -148,14 +147,14 @@ export default function DashboardPage() {
   ): Promise<{ freelancerAmount: number; clientAmount: number } | null> => {
     try {
       const { ethers } = await import("ethers");
-      const { CONTRACTS, CELO_MAINNET } = await import("@/lib/web3/config");
+      const { CONTRACTS, UNICHAIN_SEPOLIA } = await import("@/lib/web3/config");
       const { SECUREFLOW_ABI } = await import("@/lib/web3/abis");
 
       // Try to get provider from wallet context or use RPC
       let provider: any = null;
       let lastError: any = null;
 
-      for (const rpcUrl of CELO_MAINNET.rpcUrls) {
+      for (const rpcUrl of UNICHAIN_SEPOLIA.rpcUrls) {
         try {
           provider = new ethers.JsonRpcProvider(rpcUrl);
           // Test connection
@@ -640,12 +639,29 @@ export default function DashboardPage() {
       // Fetch user's escrows from the contract
       // Check if there are any escrows created yet (nextEscrowId > 1 means at least one escrow exists)
       if (escrowCount > 1) {
-        for (let i = 1; i < escrowCount; i++) {
-          try {
-            const escrowSummary = await contract.call("getEscrowSummary", i);
+        // Fetch all escrow summaries in parallel to avoid N+1 problem
+        const batchSize = 20; // Process in batches
+        const summaries = [];
 
+        for (let i = 1; i < escrowCount; i += batchSize) {
+          const end = Math.min(i + batchSize, escrowCount);
+          const batchPromises = [];
+          for (let j = i; j < end; j++) {
+            batchPromises.push(
+              contract.call("getEscrowSummary", j).then((summary: any) => ({
+                id: j,
+                summary
+              })).catch(() => null)
+            );
+          }
+          const results = await Promise.all(batchPromises);
+          summaries.push(...results.filter((r: any) => r !== null));
+        }
+
+        for (const { id, summary: escrowSummary } of summaries as any[]) {
+          try {
             // Check if user is involved in this escrow
-            // getEscrowSummary returns indexed properties: [depositor, beneficiary, arbiters, status, totalAmount, paidAmount, remaining, token, deadline, workStarted, createdAt, milestoneCount, isOpenJob, projectTitle, projectDescription]
+            // getEscrowSummary returns indexed properties
             const isPayer =
               escrowSummary[0].toLowerCase() === wallet.address?.toLowerCase();
             const isBeneficiary =
@@ -656,17 +672,19 @@ export default function DashboardPage() {
               // Fetch milestones first to check for resolved disputes
               let milestones = (await fetchMilestones(
                 contract,
-                i,
+                id,
                 escrowSummary
               )) as Milestone[];
 
               // For resolved milestones, fetch exact fund split amounts from events
+              // We can optimize this later if needed, currently it runs sequentially per escrow
+              // but parallel escrows logic would require significant refactoring of fetchMilestones
               for (let j = 0; j < milestones.length; j++) {
                 if (milestones[j].status === "resolved") {
                   try {
                     const amounts = await getDisputeResolutionAmounts(
                       contract,
-                      i,
+                      id,
                       j
                     );
                     if (
@@ -681,20 +699,9 @@ export default function DashboardPage() {
                         freelancerAmount: amounts.freelancerAmount,
                         clientAmount: amounts.clientAmount,
                       };
-                    } else if (process.env.NODE_ENV === "development") {
-                      console.log(
-                        `Escrow ${i}, Milestone ${j}: Could not fetch amounts`,
-                        amounts
-                      );
                     }
                   } catch (amountsError) {
-                    // Log error in development
-                    if (process.env.NODE_ENV === "development") {
-                      console.warn(
-                        `Failed to fetch amounts for Escrow ${i}, Milestone ${j}:`,
-                        amountsError
-                      );
-                    }
+                    // Ignore errors
                   }
                 }
               }
@@ -709,20 +716,17 @@ export default function DashboardPage() {
               const baseStatus = getStatusFromNumber(Number(escrowSummary[3]));
 
               // If there are resolved disputes, override status to "disputed"
-              // (which will be displayed as "Dispute Resolved" in the badge)
               const finalStatus = hasResolvedDispute
-                ? "disputed" // We'll show this as "Dispute Resolved" in the badge
+                ? "disputed"
                 : (baseStatus as
                   | "pending"
                   | "active"
                   | "completed"
                   | "disputed");
 
-              // Removed excessive debug logging
-
               // Convert contract data to our Escrow type
               const escrow: Escrow = {
-                id: i.toString(),
+                id: id.toString(),
                 payer: escrowSummary[0], // depositor
                 beneficiary: escrowSummary[1], // beneficiary
                 isClient: isPayer, // Track if current user is the client (payer)
@@ -736,13 +740,13 @@ export default function DashboardPage() {
                 milestones: milestones,
                 projectTitle: escrowSummary[13] || "", // projectTitle
                 projectDescription: escrowSummary[14] || "", // projectDescription
-                isOpenJob: escrowSummary[12], // isOpenJob is at index 12 based on summary structure comment
+                isOpenJob: escrowSummary[12], // isOpenJob
               };
 
               userEscrows.push(escrow);
             }
           } catch (error) {
-            // Skip escrows that don't exist or user doesn't have access to
+            // Skip errors
             continue;
           }
         }
@@ -762,21 +766,21 @@ export default function DashboardPage() {
         for (const escrow of userEscrows) {
           if (escrow.status === "completed" && escrow.isClient && wallet.address) {
             try {
-              const hasRated = await ratingsContract.call(
-                "hasRated",
-                escrow.id,
-                wallet.address
+              // Fix: calling hasRated which doesn't exist caused reverts
+              // Use getEscrowRating which returns (rater, freelancer, rating, ratedAt, exists)
+              const ratingInfo = await ratingsContract.call(
+                "getEscrowRating",
+                escrow.id
               );
 
-              if (hasRated) {
-                // If rated, we just mark as exists. 
-                // To get actual score we'd need to fetch all ratings which is expensive
+              const exists = ratingInfo[4] || ratingInfo.exists;
+              const rating = Number(ratingInfo[2] || ratingInfo.rating || 0);
+
+              if (exists) {
                 ratings[escrow.id] = {
-                  rating: 5, // Placeholder, UI will just show "Rated" if we don't know score
+                  rating: rating,
                   exists: true,
                 };
-              } else {
-                ratings[escrow.id] = { rating: 0, exists: false };
               }
             } catch (error) {
               console.log(`Rating check for escrow ${escrow.id}:`, error);
