@@ -283,6 +283,7 @@ export function EscrowCard({
                     daysActive={Math.max(0, Math.floor(
                       (Date.now() / 1000 - escrow.createdAt) / 86400
                     ))}
+                    tokenDecimals={escrow.tokenDecimals || 18}
                   />
                 )}
 

@@ -15,9 +15,10 @@ interface YieldTrackerProps {
     totalAmount: number;
     tokenSymbol: string;
     daysActive: number;
+    tokenDecimals: number;
 }
 
-export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }: YieldTrackerProps) {
+export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, tokenDecimals }: YieldTrackerProps) {
     const { getContract } = useWeb3();
     const [yieldData, setYieldData] = useState({
         lpAmount: 0,
@@ -47,7 +48,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive }:
                     try {
                         // Use getEscrowYield (view function)
                         const yieldResult = await hookContract.call("getEscrowYield", [escrowId]);
-                        currentYield = Number(ethers.formatUnits(yieldResult, 18)); // Assuming 18 decimals
+                        currentYield = Number(ethers.formatUnits(yieldResult, tokenDecimals || 18));
                         isActive = true;
                     } catch (e) {
                         console.warn("Failed to fetch yield data:", e);
