@@ -8,7 +8,7 @@ import { useJobCreatorStatus } from "@/hooks/use-job-creator-status";
 import { usePendingApprovals } from "@/hooks/use-pending-approvals";
 import { useRouter } from "next/navigation";
 import { CONTRACTS } from "@/lib/web3/config";
-import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
+import { ORBIT_WORK_ABI, ERC20_ABI } from "@/lib/web3/abis";
 import { ethers } from "ethers";
 import {
   useNotifications,
@@ -82,6 +82,9 @@ export default function ApprovalsPage() {
       const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       const nextEscrowId = Number(await contract.call("nextEscrowId"));
       const myJobs: JobWithApplications[] = [];
+      const decimalCache: Record<string, number> = {
+        "0x0000000000000000000000000000000000000000": 18 // Native token
+      };
 
       for (let i = 1; i < nextEscrowId; i++) {
         try {
@@ -360,6 +363,19 @@ export default function ApprovalsPage() {
                 applicationCount = 0;
               }
 
+              // Fetch token decimals
+              const tokenAddr = escrowSummary[7];
+              if (decimalCache[tokenAddr] === undefined) {
+                try {
+                  const tokenContract = getContract(tokenAddr, ERC20_ABI);
+                  const decimals = await tokenContract.call("decimals");
+                  decimalCache[tokenAddr] = Number(decimals) || 18;
+                } catch (e) {
+                  decimalCache[tokenAddr] = 18;
+                }
+              }
+              const tokenDecimals = decimalCache[tokenAddr] || 18;
+
               const job: JobWithApplications = {
                 id: i.toString(),
                 payer: escrowSummary[0],
@@ -378,6 +394,7 @@ export default function ApprovalsPage() {
                 isOpenJob: true,
                 applications,
                 applicationCount: Number(applicationCount),
+                tokenDecimals,
               };
 
               myJobs.push(job);
@@ -538,7 +555,7 @@ export default function ApprovalsPage() {
     0
   );
   const totalValue = jobs.reduce(
-    (sum, job) => sum + Number(job.totalAmount) / 1e18,
+    (sum, job) => sum + Number(job.totalAmount) / Math.pow(10, job.tokenDecimals || 18),
     0
   );
 

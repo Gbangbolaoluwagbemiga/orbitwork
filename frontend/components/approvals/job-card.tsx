@@ -43,6 +43,7 @@ interface JobWithApplications {
   isOpenJob?: boolean;
   applications: Application[];
   applicationCount: number;
+  tokenDecimals?: number;
 }
 
 interface JobCardProps {
@@ -97,7 +98,7 @@ export function JobCard({
               <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
               <span>•</span>
               <span>
-                Budget: {(Number.parseFloat(job.totalAmount) / 1e18).toFixed(2)}{" "}
+                Budget: {(Number.parseFloat(job.totalAmount) / Math.pow(10, job.tokenDecimals || 18)).toFixed(2)}{" "}
                 tokens
               </span>
             </div>
@@ -107,7 +108,7 @@ export function JobCard({
             <div className="text-right w-full lg:w-auto">
               <p className="text-sm text-muted-foreground mb-1">Total Budget</p>
               <p className="text-2xl md:text-3xl font-bold text-primary break-all">
-                {(Number.parseFloat(job.totalAmount) / 1e18).toFixed(2)}
+                {(Number.parseFloat(job.totalAmount) / Math.pow(10, job.tokenDecimals || 18)).toFixed(2)}
               </p>
             </div>
 

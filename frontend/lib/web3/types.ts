@@ -2,12 +2,12 @@ export interface Milestone {
   description: string;
   amount: string;
   status:
-    | "pending"
-    | "submitted"
-    | "approved"
-    | "rejected"
-    | "disputed"
-    | "resolved";
+  | "pending"
+  | "submitted"
+  | "approved"
+  | "rejected"
+  | "disputed"
+  | "resolved";
   submittedAt?: number;
   approvedAt?: number;
   disputedBy?: string; // For disputed: who disputed, for resolved: who won
@@ -39,6 +39,7 @@ export interface Escrow {
   isClient?: boolean; // true if current user is the client (payer)
   isFreelancer?: boolean; // true if current user is the freelancer (beneficiary)
   milestoneCount?: number; // total number of milestones for this escrow
+  tokenDecimals?: number; // decimals of the token used in this escrow
 }
 
 export interface EscrowStats {
