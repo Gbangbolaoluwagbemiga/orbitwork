@@ -37,51 +37,19 @@ contract DeployRealYield is Script {
         MockUSDC usdc = new MockUSDC();
         console.log("MockUSDC deployed at:", address(usdc));
 
-        // 2. Deploy OrbitWork (EscrowCore)
-        // FeeCollector = Deployer
-        // PlatformFee = 3% (300)
-        OrbitWork orbitWork = new OrbitWork(address(usdc), deployer, 300);
-        console.log("OrbitWork deployed at:", address(orbitWork));
+        // 2. Use Existing OrbitWork (Already Deployed)
+        OrbitWork orbitWork = OrbitWork(payable(0xEe8a174c6fabDEb52a5d75e8e3F951EFbC667fDB));
+        console.log("Using existing OrbitWork at:", address(orbitWork));
 
-        // 3. Deploy EscrowHook
-        // 3. Deploy EscrowHook
-        // NOTE: Local Hooks.sol uses low bits (old version), but Unichain Sepolia PoolManager uses HIGH bits (new version).
-        // We must manually define flags for high bits:
-        // BeforeAddLiquidity: 157
-        // BeforeRemoveLiquidity: 155
-        // AfterSwap: 152
-        // 3. Deploy EscrowHook
-        // NOTE: Unichain Sepolia PoolManager uses LOW BIT flags (bits 0-13, Old Standard).
-        // Target: BeforeAdd (1<<11) | BeforeRemove (1<<9) | AfterSwap (1<<6)
-        // Values: 2048 + 512 + 64 = 2624 (0xA40)
-        uint160 flags = 2624;
-        uint160 mask = (1 << 14) - 1; // 0x3FFF
-
-        bytes memory constructorArgs = abi.encode(POOL_MANAGER, address(orbitWork));
-        bytes memory initCode = abi.encodePacked(type(EscrowHook).creationCode, constructorArgs);
-        bytes32 initCodeHash = keccak256(initCode);
+        // 3. Deploy EscrowHook with Mined Salt
+        // Mined locally: 0x...56b3 -> 0xF3Db...A40
+        bytes32 salt = bytes32(uint256(0x56b3));
+        address expectedAddress = 0xF3Db6afEd83E7dDECbF099eA4717DB1A7B544a40;
         
-        address hookAddress;
-        bytes32 salt;
-        bool found = false;
+        console.log("Deploying EscrowHook with salt:", vm.toString(salt));
         
-        console.log("Mining for Low Bit flags (0xA40)...");
-        for (uint256 i = 0; i < 50000; i++) {
-            salt = bytes32(i);
-            hookAddress = vm.computeCreate2Address(salt, initCodeHash, CREATE2_FACTORY);
-            
-            if ((uint160(hookAddress) & mask) == flags) {
-                found = true;
-                break;
-            }
-        }
-        require(found, "Failed to mine 0xA40 address");
-        console.log("Mined Address:", hookAddress);
-        console.log("Salt:", vm.toString(salt));
-
         EscrowHook escrowHook = new EscrowHook{salt: salt}(POOL_MANAGER, address(orbitWork));
-        // Strict check that deployed address matches expectation
-        require(address(escrowHook) == hookAddress, "Hook Address Mismatch");
+        require(address(escrowHook) == expectedAddress, "Hook Address Mismatch");
         console.log("EscrowHook deployed at:", address(escrowHook));
 
         // 4. Link Hook to Core
