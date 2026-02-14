@@ -420,6 +420,12 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     /**
      * @notice Hook called after every swap to track fees
      */
+    function validateHookAddress(BaseHook _this) internal pure override {
+        // Bypass local validation because local v4-core uses Low-Bit flags
+        // but Unichain Sepolia PoolManager uses High-Bit flags.
+        // We mine for High-Bit flags, so local validation would fail.
+    }
+
     function afterSwap(
         address,
         PoolKey calldata,

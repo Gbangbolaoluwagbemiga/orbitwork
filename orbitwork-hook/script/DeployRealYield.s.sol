@@ -51,7 +51,12 @@ contract DeployRealYield is Script {
         // BeforeRemoveLiquidity: 155
         // AfterSwap: 152
         // 3. Deploy EscrowHook
-        // Manual Mining for 0x29 prefix (High bits 157, 155, 152)
+        // NOTE: Unichain Sepolia PoolManager uses LOW BIT flags (bits 0-13, Old Standard).
+        // Target: BeforeAdd (1<<11) | BeforeRemove (1<<9) | AfterSwap (1<<6)
+        // Values: 2048 + 512 + 64 = 2624 (0xA40)
+        uint160 flags = 2624;
+        uint160 mask = (1 << 14) - 1; // 0x3FFF
+
         bytes memory constructorArgs = abi.encode(POOL_MANAGER, address(orbitWork));
         bytes memory initCode = abi.encodePacked(type(EscrowHook).creationCode, constructorArgs);
         bytes32 initCodeHash = keccak256(initCode);
@@ -60,25 +65,22 @@ contract DeployRealYield is Script {
         bytes32 salt;
         bool found = false;
         
-        console.log("Mining for 0x29 prefix...");
-        for (uint256 i = 0; i < 30000; i++) {
+        console.log("Mining for Low Bit flags (0xA40)...");
+        for (uint256 i = 0; i < 50000; i++) {
             salt = bytes32(i);
-            // computeCreate2Address(salt, initCodeHash, deployer)
             hookAddress = vm.computeCreate2Address(salt, initCodeHash, CREATE2_FACTORY);
             
-            // Check for 0x24... wait, 0x29 (0010 1001)
-            // 2 = 0010 (159=0, 158=0, 157=1, 156=0) -> BeforeAdd (157). Correct.
-            // 9 = 1001 (155=1, 154=0, 153=0, 152=1) -> BeforeRemove (155), AfterSwap (152). Correct.
-            if (bytes20(hookAddress)[0] == 0x29) {
+            if ((uint160(hookAddress) & mask) == flags) {
                 found = true;
                 break;
             }
         }
-        require(found, "Failed to mine 0x29 address");
+        require(found, "Failed to mine 0xA40 address");
         console.log("Mined Address:", hookAddress);
         console.log("Salt:", vm.toString(salt));
 
         EscrowHook escrowHook = new EscrowHook{salt: salt}(POOL_MANAGER, address(orbitWork));
+        // Strict check that deployed address matches expectation
         require(address(escrowHook) == hookAddress, "Hook Address Mismatch");
         console.log("EscrowHook deployed at:", address(escrowHook));
 
