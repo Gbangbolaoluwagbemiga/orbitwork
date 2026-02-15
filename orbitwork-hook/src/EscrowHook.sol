@@ -13,6 +13,7 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/type
 import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
@@ -35,7 +36,7 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     using SafeERC20 for IERC20;
     using StateLibrary for IPoolManager;
 
-    uint256 public constant VERSION = 5;
+    uint256 public constant VERSION = 6;
 
     address public immutable escrowCore;
 
@@ -379,21 +380,37 @@ contract EscrowHook is BaseHook, IUnlockCallback {
             uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
             uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
             
-            // Simplified: (delta * liquidity) / Q128
             uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
             uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;
             
-            pos.yieldAccumulated += (pending0 + pending1);
+            // Normalize to 18 decimals to avoid "apples and oranges" summing
+            uint256 norm0 = _normalizeTo18(pos.key.currency0, pending0);
+            uint256 norm1 = _normalizeTo18(pos.key.currency1, pending1);
+            
+            pos.yieldAccumulated += (norm0 + norm1);
             pos.token0FeeGrowthLast = feeGrowthGlobal0;
             pos.token1FeeGrowthLast = feeGrowthGlobal1;
         }
     }
 
+    function _normalizeTo18(Currency currency, uint256 amount) internal view returns (uint256) {
+        if (amount == 0) return 0;
+        if (currency.isAddressZero()) return amount; // ETH is already 18
+        
+        uint8 decimals = 18;
+        try IERC20Metadata(Currency.unwrap(currency)).decimals() returns (uint8 d) {
+            decimals = d;
+        } catch {
+            // Fallback to 18 if call fails
+        }
+        
+        if (decimals == 18) return amount;
+        if (decimals < 18) return amount * (10 ** (18 - decimals));
+        return amount / (10 ** (decimals - 18));
+    }
+
     /**
-     * @notice Get current yield for an escrow
-     */
-    /**
-     * @notice Get current yield for an escrow
+     * @notice Get current yield for an escrow (normalized to 18 decimals)
      */
     function getEscrowYield(uint256 escrowId) external view returns (uint256) {
         LPPosition storage pos = escrowPositions[escrowId];
@@ -401,20 +418,17 @@ contract EscrowHook is BaseHook, IUnlockCallback {
 
         (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = poolManager.getFeeGrowthGlobals(pos.key.toId());
         
-        // Calculate pending fees using standard Uniswap formula: ΔfeeGrowth * liquidity
-        // feeGrowthGlobal is Q128.128
-        // We use a simplified calculation here without FullMath for readability/demo
-        // In prod, use FullMath.mulDiv for precision
-        
         unchecked {
             uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
             uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
             
-            // Pending fees = (delta * liquidity) / Q128
             uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
             uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;
             
-            return pos.yieldAccumulated + pending0 + pending1;
+            uint256 norm0 = _normalizeTo18(pos.key.currency0, pending0);
+            uint256 norm1 = _normalizeTo18(pos.key.currency1, pending1);
+            
+            return pos.yieldAccumulated + norm0 + norm1;
         }
     }
 

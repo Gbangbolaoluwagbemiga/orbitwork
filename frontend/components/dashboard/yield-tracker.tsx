@@ -48,7 +48,8 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                     try {
                         // Use getEscrowYield (view function)
                         const yieldResult = await hookContract.call("getEscrowYield", [escrowId]);
-                        currentYield = Number(ethers.formatUnits(yieldResult, tokenDecimals || 18));
+                        // Hook now normalizes all yield to 18 decimals for high precision
+                        currentYield = Number(ethers.formatUnits(yieldResult, 18));
                         isActive = true;
                     } catch (e) {
                         console.warn("Failed to fetch yield data:", e);
@@ -105,7 +106,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                             </Badge>
                         </CardTitle>
                         <CardDescription className="text-xs mt-1">
-                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(4)} ${tokenSymbol}`}
+                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}`}
                         </CardDescription>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -146,7 +147,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                                 <span className="text-xs font-medium">Yield Earned</span>
                             </div>
                             <span className="text-sm font-bold text-emerald-500">
-                                +{yieldData.yieldAccumulated.toFixed(4)} {tokenSymbol}
+                                +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}
                             </span>
                         </div>
 
@@ -158,11 +159,11 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                                     <Coins className="h-3 w-3" />
                                     Freelancer (70%)
                                 </span>
-                                <span className="font-semibold">+{freelancerYield.toFixed(4)} {tokenSymbol}</span>
+                                <span className="font-semibold">+${freelancerYield.toFixed(6)} ${tokenSymbol}</span>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>Platform (30%)</span>
-                                <span>{platformYield.toFixed(4)} {tokenSymbol}</span>
+                                <span>${platformYield.toFixed(6)} ${tokenSymbol}</span>
                             </div>
                         </div>
 
@@ -171,7 +172,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                             <div className="flex items-center justify-between text-[10px]">
                                 <span className="text-muted-foreground">Projected Total Yield:</span>
                                 <span className="font-semibold text-emerald-500">
-                                    ~{yieldData.projectedYield.toFixed(4)} {tokenSymbol}
+                                    ~${yieldData.projectedYield.toFixed(6)} ${tokenSymbol}
                                 </span>
                             </div>
                         </div>

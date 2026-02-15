@@ -62,7 +62,7 @@ contract RobustSwapper {
 contract SwapScript is Script {
     IPoolManager constant MANAGER = IPoolManager(0x00B036B58a818B1BC34d502D3fE730Db729e62AC);
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B; 
-    address constant HOOK = 0x11859719753C0a0d22790ee3C392d0EFB7Fe4a40;
+    address constant HOOK = 0x03C499185c31fEef9b018E9e2f957fA4B0330a40;
     address constant ORBIT_WORK = 0xEe8a174c6fabDEb52a5d75e8e3F951EFbC667fDB;
 
     function run() external {
@@ -84,69 +84,56 @@ contract SwapScript is Script {
             hooks: IHooks(HOOK)
         });
 
-        // 0. Initialize Pool if needed
-        try MANAGER.initialize(key, 79228162514264337593543950336) {
-            console.log("Pool Initialized by Swap Script");
+        // 1. Initialize Pool since it is new (new Hook address)
+        try MANAGER.initialize(key, TickMath.getSqrtPriceAtTick(0)) {
+            console.log("Pool Initialized");
         } catch {
             console.log("Pool already initialized");
         }
-
-        // 1. Create Escrow to add liquidity
-        IERC20(USDC).approve(ORBIT_WORK, type(uint256).max);
         
-        // Authorize Arbiter
-        OrbitWork(payable(ORBIT_WORK)).authorizeArbiter(deployer);
+        // 1. Create a NEW Escrow (ID 2) to initialize the new hook
+        console.log("Creating new Escrow...");
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 250 * 1e6; // 250 USDC
+        
+        // Mint USDC to this script for escrow
+        MockERC20(USDC).mint(deployer, 300 * 1e6);
+        MockERC20(USDC).approve(ORBIT_WORK, 300 * 1e6);
+
+        string[] memory m = new string[](1);
+        m[0] = "Simulation Milestone";
         
         address[] memory arbiters = new address[](1);
         arbiters[0] = deployer;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 100 * 1e18; // 100 USDC Liquidity
-        string[] memory descriptions = new string[](1);
-        descriptions[0] = "Milestone 1";
 
-        // Create Escrow
-        // Note: EscrowHook adds liquidity here using the deposited tokens.
-        try OrbitWork(payable(ORBIT_WORK)).createEscrow(
-            address(0x1234), 
-            arbiters, 
-            1, 
-            amounts, 
-            descriptions, 
-            USDC, 
-            30 days, 
-            "Test Escrow", 
-            "Desc"
-        ) {
-            console.log("Escrow Created and Liquidity Added");
-        } catch Error(string memory reason) {
-            console.log("Escrow Creation Failed:", reason);
-        } catch {
-             console.log("Escrow Creation Failed (Unknown)");
-        }
+        uint256 escrowId = OrbitWork(payable(ORBIT_WORK)).createEscrow(
+            0xF1E430aa48c3110B2f223f278863A4c8E2548d8C, // beneficiary
+            arbiters,
+            1, // requiredConfirmations
+            amounts,
+            m,
+            USDC,
+            86400 * 30, // duration
+            "Simulation Project",
+            "Project for yield simulation"
+        );
+        console.log("Created Escrow ID:", escrowId);
 
         // 2. Deploy Swapper
         RobustSwapper swapper = new RobustSwapper(MANAGER);
         
-        // Ensure we have USDC to swap
-        try MockERC20(USDC).mint(deployer, 1000 * 1e18) {
-            console.log("Minted MockUSDC via token");
-        } catch {
-            console.log("Minting failed - assuming enough balance or wrong token type");
-        }
-
-        IERC20(USDC).approve(address(swapper), type(uint256).max);
-        
         // 3. Swap
-        bool zeroForOne = (USDC == token0); 
-        console.log("Swapping 10 USDC for ETH...");
+        // We want to swap ETH for USDC to push tick into our liquidity range [MIN, tick]
+        bool zeroForOne = (USDC == token1); // If USDC is token1, then ETH is token0. zeroForOne=true is ETH -> USDC.
+        console.log("Swapping 0.005 ETH for USDC...");
         
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
-            amountSpecified: -10 * 1e18, 
+            amountSpecified: -1e15, // 0.001 ETH
             sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
         });
         
-        try swapper.swap(key, params) {
+        try swapper.swap{value: 1e15}(key, params) {
             console.log("Swap Complete!");
         } catch Error(string memory reason) {
             console.log("Swap Failed:", reason);
