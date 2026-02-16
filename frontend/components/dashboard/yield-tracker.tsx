@@ -46,13 +46,15 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
 
                 if (hookContract) {
                     try {
-                        // Use getEscrowYield (view function)
-                        const yieldResult = await hookContract.call("getEscrowYield", [escrowId]);
+                        // Use getEscrowYield (view function) - pass args directly, not as array
+                        const yieldResult = await hookContract.call("getEscrowYield", escrowId);
+                        console.log("Yield Result (Raw):", yieldResult);
                         // Hook now normalizes all yield to 18 decimals for high precision
                         currentYield = Number(ethers.formatUnits(yieldResult, 18));
+                        console.log("Yield Result (Formatted):", currentYield);
                         isActive = true;
                     } catch (e) {
-                        console.warn("Failed to fetch yield data:", e);
+                        console.error("Failed to fetch yield data:", e);
                     }
                 }
 

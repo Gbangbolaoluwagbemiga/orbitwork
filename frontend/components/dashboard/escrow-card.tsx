@@ -274,12 +274,12 @@ export function EscrowCard({
                 )}
 
                 {/* Productive Escrow: Yield Tracker */}
-                {/* Only show to freelancers (beneficiaries) - they earn the yield bonus */}
-                {escrow.status !== "completed" && !escrow.isClient && (
+                {/* Show to both parties for visibility of productive capital */}
+                {escrow.status !== "completed" && (
                   <YieldTracker
                     escrowId={escrow.id}
                     totalAmount={Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)}
-                    tokenSymbol="OWT"
+                    tokenSymbol="USDC"
                     daysActive={Math.max(0, Math.floor(
                       (Date.now() / 1000 - escrow.createdAt) / 86400
                     ))}

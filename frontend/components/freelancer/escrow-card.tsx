@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { Clock, DollarSign, Calendar, Play, Send } from "lucide-react";
+import { YieldTracker } from "@/components/dashboard/yield-tracker";
 
 interface Milestone {
   description: string;
@@ -195,6 +196,22 @@ export function EscrowCard({
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              {/* Productive Escrow: Yield Tracker */}
+              {/* Show to freelancer (beneficiary) */}
+              {escrow.status !== "completed" && (
+                <YieldTracker
+                  escrowId={escrow.id}
+                  totalAmount={Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)}
+                  tokenSymbol="USDC"
+                  daysActive={Math.max(0, Math.floor(
+                    (Date.now() / 1000 - escrow.createdAt) / 86400
+                  ))}
+                  tokenDecimals={escrow.tokenDecimals || 18}
+                />
+              )}
             </div>
 
             <div className="flex gap-2">
