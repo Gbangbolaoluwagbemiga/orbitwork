@@ -58,8 +58,8 @@ contract EscrowHook is BaseHook, IUnlockCallback {
     uint256 public totalYieldDistributed;
     
     // Yield distribution ratios (basis points)
-    uint256 public constant FREELANCER_SHARE = 7000; // 70%
-    uint256 public constant PLATFORM_SHARE = 3000;   // 30%
+    uint256 public constant FREELANCER_SHARE = 6000; // 60%
+    uint256 public constant PLATFORM_SHARE = 4000;   // 40%
     uint256 public constant LP_RATIO = 8000;         // 80% to LP
     uint256 public constant RESERVE_RATIO = 2000;    // 20% reserve
 
