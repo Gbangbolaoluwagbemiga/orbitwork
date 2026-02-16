@@ -2,100 +2,123 @@
 
 **The World's First Yield-Bearing Escrow Platform on Uniswap v4**
 
-> 🏆 **Submission for Uniswap Hook Incubator (UHI)**
+> 🏆 **Submitted for Uniswap Hook Incubator (UHI)**
 
-Orbitwork transforms passive escrow deposits into active, yield-generating liquidity. By deploying escrow funds into Uniswap v4 pools via a custom Hook, we unlock capital efficiency for the gig economy, allowing both clients and freelancers to earn yield on idle assets.
+Orbitwork transforms passive escrow deposits into active, yield-generating liquidity. By deploying escrow funds into Uniswap v4 pools via a custom Hook, we unlock capital efficiency for the gig economy, allowing both clients and freelancers to earn yield on idle assets while ensuring trustless payments.
 
 ---
 
-## 🚀 Live on Unichain Sepolia
+## 🚀 Live Deployment (Unichain Sepolia)
 
-### Deployed Contracts
+We are live on **Unichain Sepolia Testnet**!
+
+### Contract Addresses
 | Contract | Address | Description |
 |----------|---------|-------------|
-| **EscrowHook** | `0x1c55CC2Aac4B4AE0740fFac84CC838EeF2438A40` | The Uniswap v4 Hook that manages liquidity. |
-| **EscrowCore** | `0xFD64e85e04778c79f2628379EA7D226f2bc1bdC3` | The main logic for milestones and payments. |
-| **Ratings** | `0xa29de3678ea79c7031fc1c5c9c0547411637bd9f` | On-chain reputation system. |
+| **EscrowHook** | `0x66061cafd8688fed7163a058a52a3b5a4e88ca40` | The Uniswap v4 Hook managing liquidity and yield. |
+| **EscrowCore** | `0x3799265ef7560683890a6580fd13c4e6464f0247` | The main logic for milestones, payments, and disputes. |
+| **Ratings** | `0xa29de3678ea79c7031fc1c5c9c0547411637bd9f` | On-chain reputation and review system. |
 
 ---
 
 ## 💡 The Problem & Solution
 
-**The Problem:** Traditional escrow platforms lock up billions of dollars in idle capital. A $10,000 project taking 3 months means $10,000 earning $0 yield.
+**The Problem:** Traditional escrow platforms lock up billions of dollars in idle capital. A $10,000 project taking 3 months effectively earns $0 yield, representing a massive opportunity cost.
 
 **Our Solution:** **Liquid Escrow**
-1.  **Deposit**: Client funds are verified and locked in the escrow contract.
-2.  **Auto-LP**: Our `EscrowHook` automatically adds these funds as liquidity to a Uniswap v4 pool.
-3.  **Real Yield**: Funds earn trading fees (0.05% - 0.30%) while work is being done.
-4.  **Yield Distribution**: When milestones are released, the yield is distributed (e.g. 70% to Freelancer, 30% to Platform).
+1.  **Deposit**: Client funds (USDC, ETH, etc.) are verified and locked in the `EscrowCore` contract.
+2.  **Auto-LP Deployment**: Our `EscrowHook` automatically intercepts the deposit and deploys 80% of the funds as liquidity into a concentrated Uniswap v4 pool.
+3.  **Real Yield Generation**: While the freelancer works, the funds earn trading fees (swap fees) from the pool.
+4.  **Yield Distribution**: Upon milestone completion, the accumulated yield is distributed (e.g., 70% to Freelancer as a bonus, 30% to Platform/Client).
 
 ---
 
 ## ✨ Key Features
 
 ### 💧 Productive Capital (Real Yield)
-*   **Zero Idle Capital**: Funds work for you while you work.
-*   **Live Tracking**: The dashboard shows **Real Yield** earned from the Uniswap pool in real-time.
-*   **Collapsible UI**: Clean interface to view yield performance.
+*   **Zero Idle Capital**: Escrowed funds are put to work immediately.
+*   **Live Tracking**: The dashboard features a "Productive Capital" widget that tracks accumulated yield in real-time.
+*   **Automated Liquidity Management**: The Hook handles the complexity of adding/removing liquidity during escrow lifecycle events (creation, release, refund).
 
 ### 🛡️ Verified Identity & Reputation
-*   **Self Protocol Integration**: Users verify their identity on-chain.
-*   **Fee Discounts**: Verified users get **50% off** platform fees.
-*   **On-Chain Ratings**: Immutable review history for every completed job.
+*   **Self Protocol Integration**: Users can verify their identity on-chain for trusted interactions.
+*   **Fee Discounts**: Verified users enjoy **50% off** standard platform fees.
+*   **On-Chain Ratings**: Every completed job generates an immutable review, building a verifiable reputation history.
 
 ### ⚡ Unichain Native
-*   **Low Latency**: Built for the speed of commerce.
-*   **Gas Efficiency**: Leverages Uniswap v4's singleton architecture.
+*   **Low Latency**: Built on Unichain for instant interactions and sub-second block times.
+*   **Gas Efficiency**: Leverages Uniswap v4's singleton architecture and Unichain's low fees.
 
 ---
 
 ## 🛠️ Technical Architecture
 
 ### Smart Contracts (Foundry)
-*   **`EscrowHook.sol`**: The core hook. Intercepts `onEscrowCreated` to liquidity.
-*   **`EscrowCore.sol`**: Manages the business logic (Milestones, Disputes).
-*   **`OrbitworkRatings.sol`**: Decoupled reputation system.
+*   **`EscrowHook.sol`**: The heart of the yield engine. It implements `IHook` to interact with the Uniswap v4 `PoolManager`.
+    *   `beforeAddLiquidity`: Validates liquidity provision.
+    *   `beforeRemoveLiquidity`: Ensures only authorized escrow withdrawals can remove liquidity.
+    *   `getEscrowYield`: View function to calculate accrued fees for a specific escrow.
+*   **`EscrowCore.sol`**: Manages the business logic.
+    *   `createEscrow`: Initializes escrow and triggers the Hook.
+    *   `releaseMilestone`: Releases funds to freelancer and claimed yield.
+    *   `dispute`: Handles dispute resolution via trusted arbiters.
+*   **`OrbitworkRatings.sol`**: A decoupled, NFT-based reputation system for storing job reviews.
 
 ### Frontend (Next.js 14)
-*   **Dashboard**: Real-time management of jobs and applications.
-*   **Web3 Integration**: Custom `useWeb3` hook with optimized provider handling.
-*   **Yield Tracker**: Fetches live data from the Hook contract.
+*   **Dashboard**: A comprehensive interface for managing jobs, applications, and viewing financial stats.
+*   **Web3 Integration**: deeply integrated with `wagmi` and `ethers.js` for seamless wallet connection and contract interaction.
+*   **Yield Tracker**: A dedicated component that fetches live yield data directly from the Hook, displaying it with correct decimal formatting for any token.
 
 ---
 
 ## 📦 Installation & Setup
 
-1.  **Clone the Repo**
-    ```bash
-    git clone https://github.com/Gbangbolaoluwagbemiga/orbitwork.git
-    cd orbitwork
-    ```
+### Prerequisites
+*   [Foundry](https://book.getfoundry.sh/getting-started/installation) (for smart contracts)
+*   [Bun](https://bun.sh/) or Node.js (for frontend)
 
-2.  **Install Dependencies**
-    ```bash
-    cd frontend
-    bun install
-    ```
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Gbangbolaoluwagbemiga/orbitwork.git
+cd orbitwork
+```
 
-3.  **Run Development Server**
-    ```bash
-    bun dev
-    ```
+### 2. Smart Contract Setup
+```bash
+cd orbitwork-hook
+forge install
+forge build
+forge test
+```
 
-4.  **Run Smart Contract Tests**
-    ```bash
-    cd orbitwork-hook
-    forge test
-    ```
+### 3. Frontend Setup
+```bash
+cd frontend
+bun install
+# Create a .env.local file with your configuration (see .env.example)
+bun dev
+```
+
+The app will be available at `http://localhost:3000`.
 
 ---
 
-## 🧪 How to Demo
+## 🧪 Simulation & Testing Yield
 
-1.  **Connect Wallet**: Connect your Metamask (Unichain Sepolia).
-2.  **Create Job**: Go to "Post a Job", fill in details, and fund the escrow.
-3.  **View Yield**: Go to the Dashboard. Expand the **"Productive Capital"** card to see the "Active" status and yield accumulating.
-4.  **Hire Freelancer**: Accept a freelancer application to start the work.
+To verify the yield generation mechanism locally or on testnet, we provide a simulation script.
+
+1.  **Configure Environment**:
+    Ensure your `.env` in `orbitwork-hook` contains your `PRIVATE_KEY`.
+
+2.  **Run the Swap Simulation**:
+    This script performs creating an escrow and executing a swap to generate fees for it.
+    ```bash
+    cd orbitwork-hook
+    forge script script/Swap.s.sol:SwapScript --rpc-url https://sepolia.unichain.org --broadcast
+    ```
+
+3.  **Verify on Frontend**:
+    Refresh the dashboard. You should see the "Yield Earned" amount increase for the relevant escrow.
 
 ---
 
