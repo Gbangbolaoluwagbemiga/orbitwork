@@ -10,7 +10,9 @@ import {EscrowHook} from "../src/EscrowHook.sol";
 
 contract DeployAll is Script {
     // Unichain Sepolia Testnet
+    // Unichain Sepolia Testnet
     IPoolManager constant POOL_MANAGER = IPoolManager(0x00B036B58a818B1BC34d502D3fE730Db729e62AC);
+
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -21,8 +23,8 @@ contract DeployAll is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy OrbitWork (EscrowCore)
-        // Args: _monadToken (0x0 for native), _feeCollector, _platformFeeBP
-        OrbitWork orbitWork = new OrbitWork(address(0), deployer, 30);
+        // Args: _monadToken (0x0 for native), _feeCollector, _platformFeeBP (300 = 3%)
+        OrbitWork orbitWork = new OrbitWork(address(0), deployer, 300);
         console.log("OrbitWork deployed at:", address(orbitWork));
 
         // 2. Mine Hook Salt with correct flags

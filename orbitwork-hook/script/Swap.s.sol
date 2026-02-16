@@ -62,8 +62,8 @@ contract RobustSwapper {
 contract SwapScript is Script {
     IPoolManager constant MANAGER = IPoolManager(0x00B036B58a818B1BC34d502D3fE730Db729e62AC);
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B; 
-    address constant HOOK = 0x03C499185c31fEef9b018E9e2f957fA4B0330a40;
-    address constant ORBIT_WORK = 0xEe8a174c6fabDEb52a5d75e8e3F951EFbC667fDB;
+    address constant HOOK = 0x66061cafd8688fed7163a058a52a3b5a4e88ca40;
+    address constant ORBIT_WORK = 0x3799265ef7560683890a6580fd13c4e6464f0247;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -85,16 +85,13 @@ contract SwapScript is Script {
         });
 
         // 1. Initialize Pool since it is new (new Hook address)
-        try MANAGER.initialize(key, TickMath.getSqrtPriceAtTick(0)) {
-            console.log("Pool Initialized");
-        } catch {
-            console.log("Pool already initialized");
-        }
         
         // 1. Create a NEW Escrow (ID 2) to initialize the new hook
         console.log("Creating new Escrow...");
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 250 * 1e6; // 250 USDC
+        address[] memory arbiters = new address[](1);
+        arbiters[0] = deployer; // for escrow
         
         // Mint USDC to this script for escrow
         MockERC20(USDC).mint(deployer, 300 * 1e6);
@@ -103,21 +100,40 @@ contract SwapScript is Script {
         string[] memory m = new string[](1);
         m[0] = "Simulation Milestone";
         
-        address[] memory arbiters = new address[](1);
-        arbiters[0] = deployer;
 
-        uint256 escrowId = OrbitWork(payable(ORBIT_WORK)).createEscrow(
+        
+        try OrbitWork(payable(ORBIT_WORK)).authorizeArbiter(deployer) {
+            console.log("Authorized deployer as arbiter");
+        } catch {
+            console.log("Deployer already authorized or failed to authorize");
+        }
+
+
+
+
+
+        
+        
+        try OrbitWork(payable(ORBIT_WORK)).createEscrow(
             0xF1E430aa48c3110B2f223f278863A4c8E2548d8C, // beneficiary
             arbiters,
             1, // requiredConfirmations
-            amounts,
-            m,
-            USDC,
+            amounts, // milestoneAmounts
+            m, // milestoneDescriptions
+            USDC, 
             86400 * 30, // duration
-            "Simulation Project",
+            "Simulation Project", 
             "Project for yield simulation"
-        );
-        console.log("Created Escrow ID:", escrowId);
+        ) {
+            // The original code assigned to escrowId, but the provided snippet doesn't.
+            // Assuming the user wants to log the success without needing the ID here.
+            console.log("Created Escrow successfully.");
+        } catch Error(string memory reason) {
+            console.log("Failed to create Escrow:", reason);
+        } catch (bytes memory lowLevelData) {
+            console.log("Failed to create Escrow (low-level error)");
+        }
+
 
         // 2. Deploy Swapper
         RobustSwapper swapper = new RobustSwapper(MANAGER);
