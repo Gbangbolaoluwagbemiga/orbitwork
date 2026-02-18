@@ -258,7 +258,7 @@ export function EscrowCard({
 
             {expandedEscrow === escrow.id && (
               <div className="space-y-4 pt-4 border-t">
-                Rating Section for Completed Escrows
+                {/* Rating Section for Completed Escrows */}
                 {escrow.status === "completed" && escrow.isClient && (
                   <div className="p-4 bg-muted/20 rounded-lg border">
                     <div className="flex items-center justify-between mb-2">
