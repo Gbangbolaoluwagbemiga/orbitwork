@@ -1,16 +1,30 @@
+import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Web3Provider } from "@/contexts/web3-context";
+import { SmartAccountProvider } from "@/contexts/smart-account-context";
+import { DelegationProvider } from "@/contexts/delegation-context";
 import { NotificationProvider } from "@/contexts/notification-context";
-import { ThemeProvider } from "@/components/theme-provider";
+import { SelfVerificationProvider } from "@/contexts/self-verification-context";
+import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
-
-const inter = Inter({ subsets: ["latin"] });
+import { Suspense } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AppKit } from "@/lib/web3/reown-config";
+import { FarcasterSDKProvider } from "@/components/farcaster-sdk-provider";
 
 export const metadata: Metadata = {
-  title: "OrbitWork | Yield-Bearing Escrow",
-  description: "The world's first yield-bearing escrow platform on Uniswap v4.",
+  title: "Orbitwork - Trustless Escrow on Unichain",
+  description: "Trustless payments with transparent milestones powered by Uniswap v4",
+  generator: "Orbitwork",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/orbitwork-favicon.svg?v=2",
+    apple: "/orbitwork-favicon.svg?v=2",
+    shortcut: "/orbitwork-favicon.svg?v=2",
+  },
 };
 
 export default function RootLayout({
@@ -20,19 +34,58 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link
+          rel="icon"
+          href="/orbitwork-favicon.svg?v=2"
+          type="image/svg+xml"
+        />
+        <link rel="apple-touch-icon" href="/orbitwork-favicon.svg?v=2" />
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Farcaster Mini App Embed Metadata */}
+        <meta
+          name="fc:miniapp"
+          content='{
+          "version":"next",
+          "imageUrl":"https://orbitwork.vercel.app/orbitwork-favicon.svg?v=2",
+          "button":{
+            "title":"Launch Orbitwork",
+            "action":{
+              "type":"launch_miniapp",
+              "name":"Orbitwork",
+              "url":"https://orbitwork.vercel.app"
+            }
+          }
+        }'
+        />
+      </head>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <Web3Provider>
-            <NotificationProvider>
-              {children}
-              <Toaster />
-            </NotificationProvider>
-          </Web3Provider>
+          <FarcasterSDKProvider>
+            <AppKit>
+              <Suspense fallback={<div>Loading...</div>}>
+                <Web3Provider>
+                  <DelegationProvider>
+                    <SmartAccountProvider>
+                      <NotificationProvider>
+                        <SelfVerificationProvider>
+                          <Navbar />
+                          <main className="pt-16">{children}</main>
+                          <Toaster />
+                        </SelfVerificationProvider>
+                      </NotificationProvider>
+                    </SmartAccountProvider>
+                  </DelegationProvider>
+                </Web3Provider>
+              </Suspense>
+            </AppKit>
+          </FarcasterSDKProvider>
         </ThemeProvider>
       </body>
     </html>
