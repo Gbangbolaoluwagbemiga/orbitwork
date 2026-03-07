@@ -1,35 +1,87 @@
-export const ORBIT_WORK_ABI = [
-  "function createEscrow(address,address[],uint8,uint256[],string[],address,uint256,string,string) external returns (uint256)",
-  "function createEscrowNative(address,address[],uint8,uint256[],string[],uint256,string,string) external payable returns (uint256)",
-  "function startWork(uint256) external",
-  "function submitMilestone(uint256,uint256,string) external",
-  "function approveMilestone(uint256,uint256,uint256,bytes) external",
-  "function rejectMilestone(uint256,uint256,string) external",
-  "function resubmitMilestone(uint256,uint256,string) external",
-  "function disputeMilestone(uint256,uint256,string) external",
-  "function resolveDispute(uint256,uint256,uint256,string) external",
-  "function getEscrowSummary(uint256) external view returns (address,address,address[],uint8,uint256,uint256,uint256,address,uint256,bool,uint256,uint256,bool,string,string)",
-  "function getReputation(address) external view returns (uint256)",
-  "function getCompletedEscrows(address) external view returns (uint256)",
-  "function reputation(address) external view returns (uint256)",
-  "function completedEscrows(address) external view returns (uint256)",
-  "function rateFreelancer(uint256,uint256) external",
-  "function getFreelancerRating(address) external view returns (uint256,uint256)",
-  "function getEscrowRating(uint256) external view returns (address,address,uint256,uint256,bool)",
-  "function getBadgeTier(address) external view returns (uint256)",
-  "event EscrowCreated(uint256 indexed,address indexed,address indexed,address[],uint256,uint256,address,uint256,bool)",
-  "event MilestoneSubmitted(uint256 indexed,uint256 indexed,address indexed,string,uint256)",
-  "event MilestoneApproved(uint256 indexed,uint256 indexed,address indexed,uint256,uint256)"
-];
+import orbitWorkAbi from "./orbitwork-abi.json";
+
+export const ORBIT_WORK_ABI = orbitWorkAbi;
 
 export const ERC20_ABI = [
-  "function approve(address,uint256) external returns (bool)",
-  "function balanceof(address) external view returns (uint256)",
-  "function allowance(address,address) external view returns (uint256)"
-];
+  {
+    inputs: [],
+    name: "name",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "symbol",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "decimals",
+    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "account", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "spender", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "owner", type: "address" },
+      { internalType: "address", name: "spender", type: "address" },
+    ],
+    name: "allowance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
 
 export const ESCROW_HOOK_ABI = [
-  "function getEscrowYield(uint256) external view returns (uint256)",
-  "function claimCommission() external",
-  "function distributeYield(uint256) external"
-];
+  {
+    inputs: [{ internalType: "uint256", name: "escrowId", type: "uint256" }],
+    name: "getEscrowYield",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "escrowPositions",
+    outputs: [
+      {
+        internalType: "struct IEscrowHook.PoolKey", name: "key", type: "tuple", components: [
+          { name: "currency0", type: "address" },
+          { name: "currency1", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" }
+        ]
+      },
+      { internalType: "uint128", name: "liquidity", type: "uint128" },
+      { internalType: "uint256", name: "reserveAmount", type: "uint256" },
+      { internalType: "uint256", name: "token0FeeGrowthLast", type: "uint256" },
+      { internalType: "uint256", name: "token1FeeGrowthLast", type: "uint256" },
+      { internalType: "uint256", name: "yieldAccumulated", type: "uint256" },
+      { internalType: "bool", name: "isActive", type: "bool" }
+    ],
+    stateMutability: "view",
+    type: "function",
+  }
+] as const;
