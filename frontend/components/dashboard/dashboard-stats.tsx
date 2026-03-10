@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -9,17 +11,18 @@ interface DashboardStatsProps {
     milestones: Array<{
       status: string;
     }>;
+    tokenDecimals?: number;
   }>;
 }
 
 export function DashboardStats({ escrows }: DashboardStatsProps) {
   const totalValue = escrows.reduce(
-    (sum, escrow) => sum + Number.parseFloat(escrow.totalAmount) / 1e7,
+    (sum, escrow) => sum + Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18),
     0
   );
 
   const totalReleased = escrows.reduce(
-    (sum, escrow) => sum + Number.parseFloat(escrow.releasedAmount) / 1e7,
+    (sum, escrow) => sum + Number.parseFloat(escrow.releasedAmount) / Math.pow(10, escrow.tokenDecimals || 18),
     0
   );
 
@@ -38,9 +41,9 @@ export function DashboardStats({ escrows }: DashboardStatsProps) {
     (escrow) => escrow.status === "active" && !isEscrowTerminated(escrow)
   ).length;
 
-  // const completedProjects = escrows.filter(
-  //   (escrow) => escrow.status === "completed"
-  // ).length; // Unused
+  const completedProjects = escrows.filter(
+    (escrow) => escrow.status === "completed"
+  ).length;
 
   // Count disputed projects (including terminated ones)
   const disputedProjects = escrows.filter(
