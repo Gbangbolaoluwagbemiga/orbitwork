@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -8,12 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Filter, X, ArrowUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type SortOption = "newest" | "oldest";
-export type FilterStatus = "all" | "pending" | "active" | "completed" | "disputed";
+export type FilterStatus =
+  | "all"
+  | "pending"
+  | "active"
+  | "completed"
+  | "disputed";
+export type SortOption =
+  | "newest"
+  | "oldest"
+  | "amount-high"
+  | "amount-low"
+  | "status";
 
 interface FilterSortControlsProps {
   statusFilter: FilterStatus;
@@ -37,65 +48,101 @@ export function FilterSortControls({
   activeFiltersCount,
 }: FilterSortControlsProps) {
   return (
-    <div className="flex flex-col md:flex-row gap-4 mb-6 items-end md:items-center">
-      <div className="relative flex-1 w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by description or address..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 glass"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => onStatusFilterChange(value as FilterStatus)}
-          >
-            <SelectTrigger className="w-[140px] glass">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="disputed">Disputed</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="mb-6 space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        {/* Search Input */}
+        <div className="flex-1 w-full sm:max-w-md">
+          <Input
+            placeholder="Search projects by title or description..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full"
+          />
         </div>
 
-        <Select
-          value={sortOption}
-          onValueChange={(value) => onSortChange(value as SortOption)}
-        >
-          <SelectTrigger className="w-[140px] glass">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="oldest">Oldest First</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Filter and Sort Controls */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="status-filter"
+              className="text-sm whitespace-nowrap"
+            >
+              Status:
+            </Label>
+            <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+              <SelectTrigger id="status-filter" className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="disputed">Disputed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        {activeFiltersCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="h-9 px-2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Clear
-            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
-              {activeFiltersCount}
-            </Badge>
-          </Button>
-        )}
+          {/* Sort Option */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="sort-option" className="text-sm whitespace-nowrap">
+              Sort:
+            </Label>
+            <Select value={sortOption} onValueChange={onSortChange}>
+              <SelectTrigger id="sort-option" className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="amount-high">Amount: High to Low</SelectItem>
+                <SelectItem value="amount-low">Amount: Low to High</SelectItem>
+                <SelectItem value="status">By Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Clear Filters Button */}
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearFilters}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Clear ({activeFiltersCount})
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Active Filters Display */}
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {statusFilter !== "all" && (
+            <Badge variant="secondary" className="gap-1">
+              Status: {statusFilter}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => onStatusFilterChange("all")}
+              />
+            </Badge>
+          )}
+          {searchQuery && (
+            <Badge variant="secondary" className="gap-1">
+              Search: {searchQuery}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => onSearchChange("")}
+              />
+            </Badge>
+          )}
+        </div>
+      )}
     </div>
   );
 }
