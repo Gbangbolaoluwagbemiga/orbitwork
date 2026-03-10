@@ -313,17 +313,6 @@ export function EscrowCard({
                         >
                           {milestone.status}
                         </Badge>
-                        {milestone.status === "submitted" && (
-                          <Badge variant="outline" className="text-[10px] h-5 border-primary/30 text-primary flex items-center gap-1">
-                            <motion.div
-                              animate={{ opacity: [0.4, 1, 0.4] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            >
-                              🤖
-                            </motion.div>
-                            Reactive Monitored
-                          </Badge>
-                        )}
                         <MilestoneActions
                           escrowId={escrow.id}
                           milestoneIndex={idx}
