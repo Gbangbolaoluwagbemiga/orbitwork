@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
-import { useDelegation } from "@/contexts/delegation-context";
+import { CONTRACTS } from "@/lib/web3/config";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
 
 export function useAdminStatus() {
-  const { wallet } = useWeb3();
-  const address = wallet.address;
-  const isConnected = wallet.isConnected;
-  const { delegations } = useDelegation();
+  const { wallet, getContract } = useWeb3();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isArbiter, setIsArbiter] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isConnected || !address) {
+    if (!wallet.isConnected || !wallet.address) {
       setIsAdmin(false);
       setIsOwner(false);
       setIsArbiter(false);
@@ -21,51 +19,51 @@ export function useAdminStatus() {
     }
 
     checkAdminStatus();
-  }, [
-    isConnected,
-    address,
-    delegations.length,
-  ]);
+  }, [wallet.isConnected, wallet.address]);
 
   const checkAdminStatus = async () => {
     setLoading(true);
     try {
-      // Determine active address
-      const currentAddress = address;
-
-      if (!currentAddress) {
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
+      if (!contract) {
+        setIsAdmin(false);
+        setIsOwner(false);
+        setIsArbiter(false);
         return;
       }
 
-      // 1. Check against environment variable
-      const envOwner = process.env.VITE_OWNER_ADDRESS || "";
-      
-      // Hackathon helper: If no VITE_OWNER_ADDRESS is set, treat the connected account as admin for demo
-      if (!envOwner && isConnected && address) {
-         console.log("No VITE_OWNER_ADDRESS set. Granting Admin access to connected wallet for demo.");
-         setIsOwner(true);
-         setIsAdmin(true);
-         return;
-      }
+      // Get the contract owner
+      const owner = await contract.call("owner");
 
-      if (
-        envOwner &&
-        currentAddress.toLowerCase().trim() === envOwner.toLowerCase().trim()
-      ) {
-        console.log("Admin access granted via VITE_OWNER_ADDRESS");
-        setIsOwner(true);
-        setIsAdmin(true);
-        return;
-      }
+      // Check if current wallet is the owner
+      const ownerCheck =
+        owner.toString().toLowerCase() === wallet.address?.toLowerCase();
+      setIsOwner(ownerCheck);
 
-      // 2. TODO: Implement Contract owner check here
-      
+      // Check if current wallet is an authorized arbiter
+      const arbiterCheck = await contract.call(
+        "authorizedArbiters",
+        wallet.address
+      );
+      setIsArbiter(Boolean(arbiterCheck));
+
+      // Admin access is granted to both owner and arbiters
+      setIsAdmin(ownerCheck || Boolean(arbiterCheck));
     } catch (error) {
       console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+      setIsOwner(false);
+      setIsArbiter(false);
     } finally {
       setLoading(false);
     }
   };
 
-  return { isAdmin, isOwner, isArbiter, loading };
+  return {
+    isAdmin,
+    isOwner,
+    isArbiter,
+    loading,
+    refreshAdminStatus: checkAdminStatus,
+  };
 }
