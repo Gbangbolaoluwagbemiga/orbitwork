@@ -1430,7 +1430,7 @@ export default function DashboardPage() {
             <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="text-xl font-bold mb-2">No Escrows Found</h3>
             <p className="text-muted-foreground">
-              You don&apos;t have any escrows yet. Create one to get started.
+              You don't have any escrows yet. Create one to get started.
             </p>
           </Card>
         ) : (
