@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import {
@@ -8,9 +6,8 @@ import {
   useState,
   useEffect,
   type ReactNode,
-  useMemo,
 } from "react";
-import { useWeb3 } from "@/contexts/web3-context";
+import { useWeb3 } from "./web3-context";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Notification {
@@ -48,15 +45,13 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { wallet } = useWeb3();
-  const isConnected = wallet.isConnected;
-  const address = wallet.address;
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Load notifications from localStorage on mount and when wallet changes
   useEffect(() => {
-    if (isConnected && address) {
-      const saved = localStorage.getItem(`notifications_${address}`);
+    if (wallet.isConnected && wallet.address) {
+      const saved = localStorage.getItem(`notifications_${wallet.address}`);
       if (saved) {
         const parsedNotifications = JSON.parse(saved);
         // Convert timestamp strings back to Date objects
@@ -75,17 +70,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       // If wallet not connected, clear notifications
       setNotifications([]);
     }
-  }, [isConnected, address]);
+  }, [wallet.isConnected, wallet.address]);
 
   // Save notifications to localStorage when they change
   useEffect(() => {
-    if (isConnected && address) {
+    if (wallet.isConnected && wallet.address) {
       localStorage.setItem(
-        `notifications_${address}`,
+        `notifications_${wallet.address}`,
         JSON.stringify(notifications),
       );
     }
-  }, [notifications, isConnected, address]);
+  }, [notifications, wallet.isConnected, wallet.address]);
 
   const addNotification = (
     notification: Omit<Notification, "id" | "timestamp" | "read">,
@@ -93,7 +88,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   ) => {
     const newNotification: Notification = {
       ...notification,
-      id: `notification_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
       read: false,
     };
@@ -103,17 +98,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     // If target addresses are specified, also store for those addresses (cross-wallet notifications)
     if (targetAddresses && targetAddresses.length > 0) {
-      targetAddresses.forEach((targetAddr) => {
-        if (targetAddr && address && targetAddr !== address) {
+      targetAddresses.forEach((address) => {
+        if (address && address !== wallet.address) {
           const existingNotifications = JSON.parse(
-            localStorage.getItem(`notifications_${targetAddr}`) || "[]",
+            localStorage.getItem(`notifications_${address}`) || "[]",
           );
           const updatedNotifications = [
             newNotification,
             ...existingNotifications,
           ];
           localStorage.setItem(
-            `notifications_${targetAddr}`,
+            `notifications_${address}`,
             JSON.stringify(updatedNotifications),
           );
         }
@@ -160,7 +155,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   ) => {
     const newNotification: Notification = {
       ...notification,
-      id: `notification_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
       read: false,
     };
@@ -172,25 +167,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const targetAddresses = [];
     if (
       clientAddress &&
-      clientAddress.toLowerCase() !== address?.toLowerCase()
+      clientAddress.toLowerCase() !== wallet.address?.toLowerCase()
     ) {
       targetAddresses.push(clientAddress.toLowerCase());
     }
     if (
       freelancerAddress &&
-      freelancerAddress.toLowerCase() !== address?.toLowerCase()
+      freelancerAddress.toLowerCase() !== wallet.address?.toLowerCase()
     ) {
       targetAddresses.push(freelancerAddress.toLowerCase());
     }
 
     // Send to all target addresses
-    targetAddresses.forEach((targetAddr) => {
+    targetAddresses.forEach((address) => {
       const existingNotifications = JSON.parse(
-        localStorage.getItem(`notifications_${targetAddr}`) || "[]",
+        localStorage.getItem(`notifications_${address}`) || "[]",
       );
       const updatedNotifications = [newNotification, ...existingNotifications];
       localStorage.setItem(
-        `notifications_${targetAddr}`,
+        `notifications_${address}`,
         JSON.stringify(updatedNotifications),
       );
     });
@@ -206,22 +201,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const contextValue = useMemo(
-    () => ({
-      notifications,
-      unreadCount,
-      addNotification,
-      markAsRead,
-      markAllAsRead,
-      clearNotifications,
-      removeNotification,
-      addCrossWalletNotification,
-    }),
-    [notifications, unreadCount],
-  );
-
   return (
-    <NotificationContext.Provider value={contextValue}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        addNotification,
+        markAsRead,
+        markAllAsRead,
+        clearNotifications,
+        removeNotification,
+        addCrossWalletNotification,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
