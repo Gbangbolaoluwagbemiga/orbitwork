@@ -1,6 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, DollarSign, User, Zap } from "lucide-react";
+"use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Clock, DollarSign, User, Zap } from "lucide-react";
+import { useSmartAccount } from "@/contexts/smart-account-context";
 
 interface Milestone {
   description: string;
@@ -23,6 +26,7 @@ interface ReviewStepProps {
   isSubmitting: boolean;
   isContractPaused: boolean;
   isOnCorrectNetwork?: boolean;
+  platformFeeBP?: number;
 }
 
 export function ReviewStep({
@@ -31,9 +35,9 @@ export function ReviewStep({
   isSubmitting,
   isContractPaused,
   isOnCorrectNetwork = true,
+  platformFeeBP = 0,
 }: ReviewStepProps) {
-  // Smart account integration placeholder
-  const isSmartAccountReady = false;
+  const { isSmartAccountReady } = useSmartAccount();
   const totalMilestoneAmount = formData.milestones.reduce(
     (sum, milestone) => sum + Number.parseFloat(milestone.amount || "0"),
     0
@@ -43,15 +47,21 @@ export function ReviewStep({
     Math.abs(totalMilestoneAmount - Number.parseFloat(formData.totalBudget)) <
     0.01;
 
+  const feePercentage = platformFeeBP / 100;
+  const platformFeeAmount = (Number.parseFloat(formData.totalBudget) * platformFeeBP) / 10000;
+  const totalWithFee = Number.parseFloat(formData.totalBudget) + platformFeeAmount;
+
   return (
     <Card className="glass border-primary/20 p-6">
       <CardHeader>
         <CardTitle>Review & Confirm</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">{formData.projectTitle}</h3>
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg mb-2">
+              {formData.projectTitle}
+            </h3>
             <p className="text-muted-foreground">
               {formData.projectDescription}
             </p>
@@ -75,14 +85,14 @@ export function ReviewStep({
           </div>
 
           {formData.beneficiary && (
-            <div className="space-y-1">
+            <div>
               <p className="text-sm text-muted-foreground">Beneficiary:</p>
               <p className="font-mono text-sm">{formData.beneficiary}</p>
             </div>
           )}
 
-          <div className="space-y-3">
-            <h4 className="font-medium">
+          <div>
+            <h4 className="font-medium mb-2">
               Milestones ({formData.milestones.length})
             </h4>
             <div className="space-y-2">
@@ -100,7 +110,7 @@ export function ReviewStep({
             </div>
           </div>
 
-          <div className="border-t pt-4 space-y-3">
+          <div className="border-t pt-4">
             <div className="flex items-center justify-between">
               <span className="font-medium">Total Milestone Amount:</span>
               <span className="font-semibold">
@@ -113,9 +123,25 @@ export function ReviewStep({
                 {formData.totalBudget} tokens
               </span>
             </div>
+            {platformFeeBP > 0 && (
+              <>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-sm">Platform Fee ({feePercentage}%):</span>
+                  <span className="text-sm font-medium">
+                    + {platformFeeAmount.toFixed(2)} tokens
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t mt-2 pt-2 text-primary">
+                  <span className="font-bold">Total to Pay:</span>
+                  <span className="font-bold">
+                    {totalWithFee.toFixed(2)} tokens
+                  </span>
+                </div>
+              </>
+            )}
             {!isTotalValid && (
-              <p className="text-sm text-destructive mt-3">
-                ⚠️ Milestone amounts don&apos;t match project budget
+              <p className="text-sm text-destructive mt-2">
+                ⚠️ Milestone amounts don't match project budget
               </p>
             )}
           </div>
@@ -124,36 +150,7 @@ export function ReviewStep({
         <div className="flex gap-4">
           <button
             type="button"
-            onClick={async (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log("Create Escrow button clicked", {
-                isSubmitting,
-                isContractPaused,
-                isTotalValid,
-                isOnCorrectNetwork,
-                onConfirmType: typeof onConfirm,
-                onConfirmExists: !!onConfirm,
-              });
-              if (
-                !isSubmitting &&
-                !isContractPaused &&
-                isTotalValid &&
-                isOnCorrectNetwork
-              ) {
-                console.log("Calling onConfirm() now...");
-                try {
-                  await onConfirm();
-                  console.log("onConfirm() completed successfully");
-                } catch (error) {
-                  console.error("Error in onConfirm():", error);
-                }
-              } else {
-                console.warn(
-                  "Button conditions not met, not calling onConfirm"
-                );
-              }
-            }}
+            onClick={onConfirm}
             disabled={
               isSubmitting ||
               isContractPaused ||

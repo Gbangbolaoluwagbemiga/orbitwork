@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +50,7 @@ export function MilestonesStep({
   const updateMilestone = (
     index: number,
     field: keyof Milestone,
-    value: string
+    value: string,
   ) => {
     const updated = [...milestones];
     updated[index] = { ...updated[index], [field]: value };
@@ -80,8 +82,8 @@ export function MilestonesStep({
         )}
 
         {milestones.map((milestone, index) => (
-          <div key={index} className="border border-border/40 rounded-lg p-5">
-            <div className="flex items-center justify-between mb-5">
+          <div key={index} className="border border-border/40 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium">Milestone {index + 1}</h4>
               <div className="flex gap-2">
                 <Button
@@ -111,10 +113,7 @@ export function MilestonesStep({
 
             <div className="space-y-4">
               <div>
-                <Label
-                  htmlFor={`milestone-${index}-description`}
-                  className="mb-2 block"
-                >
+                <Label htmlFor={`milestone-${index}-description`}>
                   Description *
                 </Label>
                 <Textarea
@@ -140,10 +139,7 @@ export function MilestonesStep({
               </div>
 
               <div>
-                <Label
-                  htmlFor={`milestone-${index}-amount`}
-                  className="mb-2 block"
-                >
+                <Label htmlFor={`milestone-${index}-amount`}>
                   Amount (tokens) *
                 </Label>
                 <Input
@@ -181,16 +177,16 @@ export function MilestonesStep({
           type="button"
           variant="outline"
           onClick={addMilestone}
-          className="w-full mt-4"
+          className="w-full"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Milestone
         </Button>
 
         {/* Total Budget Checker */}
-        <div className="mt-6 p-5 bg-muted/50 rounded-lg border">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-2">
+        <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Label className="text-sm font-medium text-muted-foreground">
                 Total Milestone Amount:
               </Label>
@@ -198,12 +194,12 @@ export function MilestonesStep({
                 {milestones
                   .reduce(
                     (sum, m) => sum + (Number.parseFloat(m.amount) || 0),
-                    0
+                    0,
                   )
                   .toFixed(2)}
               </div>
             </div>
-            <div className="space-y-2">
+            <div>
               <Label className="text-sm font-medium text-muted-foreground">
                 Target Total:
               </Label>
@@ -214,7 +210,7 @@ export function MilestonesStep({
           </div>
 
           {errors.totalMismatch && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-600 text-sm font-medium">
                 Amount mismatch
               </p>

@@ -1,11 +1,19 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { AlertCircle, Coins } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProjectDetailsStepProps {
   formData: {
@@ -20,6 +28,7 @@ interface ProjectDetailsStepProps {
   };
   onUpdate: (data: Partial<ProjectDetailsStepProps["formData"]>) => void;
   isContractPaused: boolean;
+  whitelistedTokens?: { address: string; name?: string; symbol?: string }[];
   errors?: {
     projectTitle?: string;
     projectDescription?: string;
@@ -34,16 +43,17 @@ export function ProjectDetailsStep({
   formData,
   onUpdate,
   isContractPaused,
-  errors = {} as ProjectDetailsStepProps["errors"],
+  whitelistedTokens = [],
+  errors = {},
 }: ProjectDetailsStepProps) {
   return (
     <Card className="glass border-primary/20 p-6">
       <CardHeader>
         <CardTitle>Project Details</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-6">
         {isContractPaused && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Contract is currently paused. Escrow creation is temporarily
@@ -52,11 +62,9 @@ export function ProjectDetailsStep({
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="projectTitle" className="mb-2 block">
-              Project Title *
-            </Label>
+            <Label htmlFor="projectTitle">Project Title *</Label>
             <Input
               id="projectTitle"
               value={formData.projectTitle}
@@ -65,20 +73,16 @@ export function ProjectDetailsStep({
               required
               minLength={3}
               className={
-                errors?.projectTitle
-                  ? "border-red-500 focus:border-red-500"
-                  : ""
+                errors.projectTitle ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors?.projectTitle && (
+            {errors.projectTitle && (
               <p className="text-red-500 text-sm mt-1">{errors.projectTitle}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="duration" className="mb-2 block">
-              Duration (days) *
-            </Label>
+            <Label htmlFor="duration">Duration (days) *</Label>
             <Input
               id="duration"
               type="number"
@@ -89,33 +93,30 @@ export function ProjectDetailsStep({
               max="365"
               required
               className={
-                errors?.duration ? "border-red-500 focus:border-red-500" : ""
+                errors.duration ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors?.duration && (
+            {errors.duration && (
               <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
             )}
           </div>
         </div>
 
         <div>
-          <Label htmlFor="projectDescription" className="mb-2 block">
-            Project Description *
-          </Label>
+          <Label htmlFor="projectDescription">Project Description *</Label>
           <Textarea
             id="projectDescription"
             value={formData.projectDescription}
             onChange={(e) => onUpdate({ projectDescription: e.target.value })}
             placeholder="Describe the project requirements and deliverables..."
-            className={`min-h-[120px] ${
-              errors?.projectDescription
+            className={`min-h-[120px] ${errors.projectDescription
                 ? "border-red-500 focus:border-red-500"
                 : ""
-            }`}
+              }`}
             required
             minLength={50}
           />
-          {errors?.projectDescription ? (
+          {errors.projectDescription ? (
             <p className="text-red-500 text-sm mt-1">
               {errors.projectDescription}
             </p>
@@ -126,11 +127,9 @@ export function ProjectDetailsStep({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="totalBudget" className="mb-2 block">
-              Total Budget (tokens) *
-            </Label>
+            <Label htmlFor="totalBudget">Total Budget (tokens) *</Label>
             <Input
               id="totalBudget"
               type="number"
@@ -141,10 +140,10 @@ export function ProjectDetailsStep({
               step="0.01"
               required
               className={
-                errors?.totalBudget ? "border-red-500 focus:border-red-500" : ""
+                errors.totalBudget ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors?.totalBudget ? (
+            {errors.totalBudget ? (
               <p className="text-red-500 text-sm mt-1">{errors.totalBudget}</p>
             ) : (
               <p className="text-xs text-muted-foreground mt-1">
@@ -154,85 +153,124 @@ export function ProjectDetailsStep({
           </div>
 
           <div>
-            <Label htmlFor="beneficiary" className="mb-2 block">
+            <Label htmlFor="beneficiary">
               Beneficiary Address {!formData.isOpenJob && "*"}
             </Label>
             <Input
               id="beneficiary"
               value={formData.beneficiary}
               onChange={(e) => onUpdate({ beneficiary: e.target.value })}
-              placeholder="01..."
+              placeholder="0x..."
               disabled={formData.isOpenJob}
               required={!formData.isOpenJob}
-              pattern="^(01|02)[0-9a-fA-F]{64}$"
+              pattern="^0x[a-fA-F0-9]{40}$"
               className={
-                errors?.beneficiary ? "border-red-500 focus:border-red-500" : ""
+                errors.beneficiary ? "border-red-500 focus:border-red-500" : ""
               }
             />
-            {errors?.beneficiary ? (
+            {errors.beneficiary ? (
               <p className="text-red-500 text-sm mt-1">{errors.beneficiary}</p>
             ) : (
               <p className="text-xs text-muted-foreground mt-1">
                 {formData.isOpenJob
                   ? "Leave empty for open job applications"
-                  : "Valid EVM address required for direct escrow"}
+                  : "Valid Ethereum address required for direct escrow"}
               </p>
             )}
           </div>
         </div>
 
-        <div className="space-y-6 mt-4">
-          <div className="flex items-center space-x-3">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               id="useNativeToken"
               checked={formData.useNativeToken}
               onChange={(e) => onUpdate({ useNativeToken: e.target.checked })}
-              className="rounded w-4 h-4"
+              className="rounded"
             />
-            <Label htmlFor="useNativeToken" className="cursor-pointer">
-              Use Native Token (ETH)
-            </Label>
+            <Label htmlFor="useNativeToken">Use Native Token (ETH)</Label>
           </div>
 
           {!formData.useNativeToken && (
             <div>
-              <Label htmlFor="tokenAddress" className="mb-2 block">
-                Token Address *
-              </Label>
-              <div className="space-y-2">
-                <Input
-                  id="tokenAddress"
+              <div className="flex items-center gap-3">
+                <Label
+                  htmlFor="tokenSelect"
+                  className="flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Coins className="h-4 w-4 text-primary" />
+                  Custom Token *
+                </Label>
+
+                <Select
                   value={formData.token}
-                  onChange={(e) => onUpdate({ token: e.target.value })}
-                  placeholder="0x..."
-                  required
-                  className={
-                    errors?.tokenAddress ? "border-red-500 focus:border-red-500" : ""
-                  }
-                />
+                  onValueChange={(value) => onUpdate({ token: value })}
+                >
+                  <SelectTrigger
+                    id="tokenSelect"
+                    className={`flex-1 ${errors.tokenAddress
+                        ? "border-red-500 focus:border-red-500"
+                        : ""
+                      }`}
+                  >
+                    <SelectValue placeholder="Select a token..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {whitelistedTokens.length > 0 ? (
+                      whitelistedTokens.map((token) => {
+                        const displayName = token.name || "Unknown Token";
+                        const displaySymbol = token.symbol || "???";
+                        const shortAddress = `${token.address.slice(
+                          0,
+                          6
+                        )}...${token.address.slice(-4)}`;
+
+                        return (
+                          <SelectItem key={token.address} value={token.address}>
+                            <span className="font-medium">{displayName}</span>
+                            {token.symbol && (
+                              <span className="font-normal">
+                                {" "}
+                                ({displaySymbol})
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {shortAddress}
+                            </span>
+                          </SelectItem>
+                        );
+                      })
+                    ) : (
+                      <SelectItem value="loading" disabled>
+                        Loading tokens...
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-              {errors?.tokenAddress ? (
-                <p className="text-red-500 text-sm mt-1">{errors.tokenAddress}</p>
+
+              {errors.tokenAddress ? (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.tokenAddress}
+                </p>
               ) : (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter the ERC-20 token contract address
+                  Only admin-whitelisted tokens available
                 </p>
               )}
             </div>
           )}
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               id="isOpenJob"
               checked={formData.isOpenJob}
               onChange={(e) => onUpdate({ isOpenJob: e.target.checked })}
-              className="rounded w-4 h-4"
+              className="rounded"
             />
-            <Label htmlFor="isOpenJob" className="cursor-pointer">
-              Open Job (Allow Applications)
-            </Label>
+            <Label htmlFor="isOpenJob">Open Job (Allow Applications)</Label>
           </div>
         </div>
       </CardContent>
