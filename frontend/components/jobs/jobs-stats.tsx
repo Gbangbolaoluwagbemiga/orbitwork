@@ -1,3 +1,5 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Briefcase, DollarSign, Clock, User } from "lucide-react";
 
@@ -5,19 +7,15 @@ interface JobsStatsProps {
   jobs: Array<{
     totalAmount: string;
     duration: number;
+    tokenDecimals?: number;
   }>;
-  openJobsCount?: number; // Total escrows from blockchain
   ongoingProjectsCount?: number;
 }
 
-export function JobsStats({
-  jobs,
-  openJobsCount,
-  ongoingProjectsCount = 0,
-}: JobsStatsProps) {
+export function JobsStats({ jobs, ongoingProjectsCount = 0 }: JobsStatsProps) {
   const totalValue = jobs.reduce(
-    (sum, job) => sum + Number.parseFloat(job.totalAmount),
-    0
+    (sum, job) => sum + (Number.parseFloat(job.totalAmount) / Math.pow(10, job.tokenDecimals || 18)),
+    0,
   );
   const avgDuration =
     jobs.length > 0
@@ -29,9 +27,9 @@ export function JobsStats({
       <Card className="glass border-primary/20 p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground mb-1">Total Escrows</p>
+            <p className="text-sm text-muted-foreground mb-1">Open Jobs</p>
             <p className="text-2xl md:text-3xl font-bold break-all">
-              {openJobsCount !== undefined ? openJobsCount : jobs.length}
+              {jobs.length}
             </p>
           </div>
           <Briefcase className="h-8 w-8 md:h-10 md:w-10 text-primary opacity-50 flex-shrink-0" />
@@ -43,7 +41,7 @@ export function JobsStats({
           <div className="min-w-0 flex-1">
             <p className="text-sm text-muted-foreground mb-1">Total Value</p>
             <p className="text-2xl md:text-3xl font-bold break-all">
-              {(totalValue / 1e7).toFixed(2)} tokens
+              {totalValue.toFixed(2)} tokens
             </p>
           </div>
           <DollarSign className="h-8 w-8 md:h-10 md:w-10 text-accent opacity-50 flex-shrink-0" />

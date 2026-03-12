@@ -1,8 +1,10 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, DollarSign, AlertCircle } from "lucide-react";
 import type { Escrow } from "@/lib/web3/types";
 
 interface JobCardProps {
@@ -12,6 +14,8 @@ interface JobCardProps {
   isContractPaused: boolean;
   ongoingProjectsCount: number;
   onApply: (job: Escrow) => void;
+  clientRating?: number;
+  clientRatingCount?: number;
 }
 
 export function JobCard({
@@ -21,13 +25,9 @@ export function JobCard({
   isContractPaused,
   ongoingProjectsCount,
   onApply,
+  clientRating = 0,
+  clientRatingCount = 0,
 }: JobCardProps) {
-  console.log(
-    `[JobCard] Rendering job ${job.id}, hasApplied prop:`,
-    hasApplied,
-    typeof hasApplied
-  );
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -54,7 +54,7 @@ export function JobCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-3">
               <h3 className="text-xl font-bold">
-                {job.projectTitle || job.projectDescription || `Job #${job.id}`}
+                {job.projectTitle || `Job #${job.id}`}
               </h3>
               <Badge variant="secondary" className="gap-1">
                 <Clock className="h-3 w-3" />
@@ -63,16 +63,19 @@ export function JobCard({
               <Badge className={getStatusColor(job.status)}>{job.status}</Badge>
             </div>
 
-            <p className="text-muted-foreground mb-4 break-words overflow-hidden">
-              {job.projectDescription || "No description available"}
+            <p className="text-muted-foreground mb-4 wrap-break-word overflow-hidden">
+              {job.projectDescription || "No description provided"}
             </p>
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
               <span>•</span>
               <span>
-                Budget: {(Number.parseFloat(job.totalAmount) / 1e9).toFixed(2)}{" "}
-                CSPR
+                Budget: {(
+                  Number.parseFloat(job.totalAmount) /
+                  Math.pow(10, job.tokenDecimals || 18)
+                ).toFixed(2)}{" "}
+                tokens
               </span>
             </div>
           </div>
@@ -81,7 +84,10 @@ export function JobCard({
             <div className="text-right w-full lg:w-auto">
               <p className="text-sm text-muted-foreground mb-1">Total Budget</p>
               <p className="text-2xl md:text-3xl font-bold text-primary break-all">
-                {(Number.parseFloat(job.totalAmount) / 1e9).toFixed(2)} CSPR
+                {(
+                  Number.parseFloat(job.totalAmount) /
+                  Math.pow(10, job.tokenDecimals || 18)
+                ).toFixed(2)}
               </p>
             </div>
 
@@ -95,38 +101,23 @@ export function JobCard({
               }
               className="w-full lg:w-auto min-w-[140px]"
             >
-              {(() => {
-                const buttonText = isContractPaused ? (
-                  <>
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Contract Paused
-                  </>
-                ) : job.isJobCreator ? (
-                  "Your Job"
-                ) : hasApplied ? (
-                  "Applied"
-                ) : ongoingProjectsCount >= 3 ? (
-                  <>
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Project Limit (3/3)
-                  </>
-                ) : (
-                  "Apply Now"
-                );
-                console.log(
-                  `[JobCard] Button text for job ${job.id}:`,
-                  buttonText,
-                  "hasApplied:",
-                  hasApplied,
-                  "isContractPaused:",
-                  isContractPaused,
-                  "isJobCreator:",
-                  job.isJobCreator,
-                  "ongoingProjectsCount:",
-                  ongoingProjectsCount
-                );
-                return buttonText;
-              })()}
+              {isContractPaused ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Contract Paused
+                </>
+              ) : job.isJobCreator ? (
+                "Your Job"
+              ) : hasApplied ? (
+                "Applied"
+              ) : ongoingProjectsCount >= 3 ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Project Limit (3/3)
+                </>
+              ) : (
+                "Apply Now"
+              )}
             </Button>
           </div>
         </div>

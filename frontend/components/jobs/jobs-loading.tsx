@@ -1,5 +1,7 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
-import { Wallet } from "lucide-react";
+import { Wallet, Briefcase } from "lucide-react";
 
 interface JobsLoadingProps {
   isConnected: boolean;
