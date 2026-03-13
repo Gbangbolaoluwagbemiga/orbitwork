@@ -1,4 +1,4 @@
-
+"use client";
 
 import { Card } from "@/components/ui/card";
 import { User } from "lucide-react";

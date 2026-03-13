@@ -1,4 +1,4 @@
-
+"use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { Clock, DollarSign, Calendar, Play, Send } from "lucide-react";
+import { YieldTracker } from "@/components/dashboard/yield-tracker";
 
 interface Milestone {
   description: string;
@@ -28,6 +29,7 @@ interface Escrow {
   milestones: Milestone[];
   projectDescription: string;
   isOpenJob: boolean;
+  tokenDecimals?: number;
 }
 
 interface EscrowCardProps {
@@ -80,8 +82,8 @@ export function EscrowCard({
   const progressPercentage =
     escrow.totalAmount !== "0"
       ? (Number.parseFloat(escrow.releasedAmount) /
-          Number.parseFloat(escrow.totalAmount)) *
-        100
+        Number.parseFloat(escrow.totalAmount)) *
+      100
       : 0;
 
   const completedMilestones = escrow.milestones.filter(
@@ -112,7 +114,7 @@ export function EscrowCard({
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-4 w-4" />
                   <span>
-                    {(Number.parseFloat(escrow.totalAmount) / 1e7).toFixed(2)}{" "}
+                    {(Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)).toFixed(2)}{" "}
                     tokens
                   </span>
                 </div>
@@ -146,14 +148,14 @@ export function EscrowCard({
               <div>
                 <span className="text-gray-600">Total Amount:</span>
                 <div className="font-semibold">
-                  {(Number.parseFloat(escrow.totalAmount) / 1e7).toFixed(2)}{" "}
+                  {(Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)).toFixed(2)}{" "}
                   tokens
                 </div>
               </div>
               <div>
                 <span className="text-gray-600">Released:</span>
                 <div className="font-semibold">
-                  {(Number.parseFloat(escrow.releasedAmount) / 1e7).toFixed(2)}{" "}
+                  {(Number.parseFloat(escrow.releasedAmount) / Math.pow(10, escrow.tokenDecimals || 18)).toFixed(2)}{" "}
                   tokens
                 </div>
               </div>
@@ -171,7 +173,7 @@ export function EscrowCard({
                       {milestone.description}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {(Number.parseFloat(milestone.amount) / 1e7).toFixed(2)}{" "}
+                      {(Number.parseFloat(milestone.amount) / Math.pow(10, escrow.tokenDecimals || 18)).toFixed(2)}{" "}
                       tokens
                     </p>
                   </div>
@@ -194,6 +196,22 @@ export function EscrowCard({
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              {/* Productive Escrow: Yield Tracker */}
+              {/* Show to freelancer (beneficiary) */}
+              {escrow.status !== "completed" && (
+                <YieldTracker
+                  escrowId={escrow.id}
+                  totalAmount={Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)}
+                  tokenSymbol="USDC"
+                  daysActive={Math.max(0, Math.floor(
+                    (Date.now() / 1000 - escrow.createdAt) / 86400
+                  ))}
+                  tokenDecimals={escrow.tokenDecimals || 18}
+                />
+              )}
             </div>
 
             <div className="flex gap-2">
