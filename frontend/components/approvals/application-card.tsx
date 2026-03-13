@@ -1,12 +1,21 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { User, Calendar } from "lucide-react";
-import { BadgeDisplay, RatingDisplay } from "@/components/rating/badge-display";
-import type { Application as ApplicationType } from "@/lib/web3/types";
+import { User, Calendar, CheckCircle, Star, Award, Shield, ShieldAlert } from "lucide-react";
 
-type Application = ApplicationType;
+interface Application {
+  freelancerAddress: string;
+  coverLetter: string;
+  proposedTimeline: number;
+  appliedAt: number;
+  status: "pending" | "accepted" | "rejected";
+  averageRating?: number; // Average rating * 100
+  totalRatings?: number;
+  isVerified?: boolean;
+}
 
 interface ApplicationCardProps {
   application: Application;
@@ -31,14 +40,49 @@ export function ApplicationCard({
               {application.freelancerAddress.slice(0, 6)}...
               {application.freelancerAddress.slice(-4)}
             </span>
-            {application.badge && <BadgeDisplay badge={application.badge} />}
-            {(application.averageRating !== undefined ||
-              application.ratingCount !== undefined) && (
-              <RatingDisplay
-                averageRating={application.averageRating}
-                ratingCount={application.ratingCount}
-              />
+
+            {/* Verification Status */}
+            {application.isVerified ? (
+              <Badge
+                variant="secondary"
+                className="text-xs bg-green-100 text-green-800 border-green-300 gap-1"
+              >
+                <Shield className="h-3 w-3 fill-green-500 text-green-500" />
+                Verified
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-xs bg-gray-100 text-gray-500 border-gray-300 gap-1"
+              >
+                <ShieldAlert className="h-3 w-3 text-gray-400" />
+                Not Verified
+              </Badge>
             )}
+
+            {/* Display rating if available */}
+            {application.totalRatings && application.totalRatings > 0 ? (
+              <Badge
+                variant="secondary"
+                className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300"
+              >
+                <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
+                {(application.averageRating! / 100).toFixed(1)} / 5.0
+                <span className="ml-1 text-xs opacity-70">
+                  ({application.totalRatings}{" "}
+                  {application.totalRatings === 1 ? "review" : "reviews"})
+                </span>
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-xs bg-gray-50 text-gray-600"
+              >
+                <Award className="h-3 w-3 mr-1" />
+                New freelancer
+              </Badge>
+            )}
+
             <Badge
               variant="secondary"
               className="text-xs bg-blue-100 text-blue-800"
