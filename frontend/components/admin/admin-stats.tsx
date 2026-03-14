@@ -1,4 +1,4 @@
-
+"use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, FileText, DollarSign, Users } from "lucide-react";

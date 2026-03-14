@@ -1,4 +1,7 @@
+"use client";
+
 import { motion } from "framer-motion";
+import { Shield } from "lucide-react";
 
 export function AdminHeader() {
   return (

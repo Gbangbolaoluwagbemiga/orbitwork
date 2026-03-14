@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,11 +15,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useWeb3 } from "@/hooks/use-web3";
+import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
-
-import { useNotifications } from "@/contexts/notification-context";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
+import {
+  useNotifications,
+  createMilestoneNotification,
+} from "@/contexts/notification-context";
 import {
   AlertTriangle,
   Clock,
@@ -25,6 +30,7 @@ import {
   DollarSign,
   Scale,
   CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -50,7 +56,7 @@ export function DisputeResolution({
 }: DisputeResolutionProps) {
   const { wallet, getContract } = useWeb3();
   const { toast } = useToast();
-  const { addCrossWalletNotification } = useNotifications();
+  const { addNotification, addCrossWalletNotification } = useNotifications();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastDisputeCount, setLastDisputeCount] = useState(0);
@@ -71,20 +77,23 @@ export function DisputeResolution({
       if (showLoading) {
         setLoading(true);
       }
-      const contract = getContract(CONTRACTS.ORBITWORK_ESCROW);
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
       if (!contract) return;
 
       const disputes: Dispute[] = [];
 
       // Get total number of escrows
-      const totalEscrows = await contract.call("next_escrow_id");
+      const totalEscrows = await contract.call("nextEscrowId");
       const escrowCount = Number(totalEscrows);
 
       // Check each escrow for disputes
       for (let escrowId = 1; escrowId < escrowCount; escrowId++) {
         try {
-          const escrowSummary = await contract.call("get_escrow", escrowId);
-          // const escrowStatus = Number(escrowSummary[3]); // status is at index 3 - unused
+          const escrowSummary = await contract.call(
+            "getEscrowSummary",
+            escrowId
+          );
+          const escrowStatus = Number(escrowSummary[3]); // status is at index 3
 
           // Get milestone details for this escrow (check all escrows, not just disputed ones)
           const milestoneCount = Number(escrowSummary[11]); // milestoneCount is at index 11
@@ -110,7 +119,7 @@ export function DisputeResolution({
                   disputedBy: milestone[6], // disputedBy is at index 6
                   disputeReason: milestone[7], // disputeReason is at index 7
                   disputedAt: Number(milestone[5]), // disputedAt is at index 5
-                  milestoneAmount: Number(milestone[1]) / 1e7, // amount in tokens
+                  milestoneAmount: Number(milestone[1]) / 1e18, // amount in tokens
                   clientAddress: escrowSummary[0], // depositor
                   freelancerAddress: escrowSummary[1], // beneficiary
                   projectTitle: escrowSummary[13] || "Untitled Project", // projectTitle
@@ -118,7 +127,7 @@ export function DisputeResolution({
                 };
                 disputes.push(dispute);
               }
-            } catch (milestoneError) {}
+            } catch (milestoneError) { }
           }
         } catch (escrowError) {
           // Try to get milestone data directly even if escrow summary fails
@@ -142,7 +151,7 @@ export function DisputeResolution({
                     disputedBy: milestone[6], // disputedBy is at index 6
                     disputeReason: milestone[7], // disputeReason is at index 7
                     disputedAt: Number(milestone[5]), // disputedAt is at index 5
-                    milestoneAmount: Number(milestone[1]) / 1e7, // amount in tokens
+                    milestoneAmount: Number(milestone[1]) / 1e18, // amount in tokens
                     clientAddress: "Unknown", // Can't get from failed escrow summary
                     freelancerAddress: "Unknown", // Can't get from failed escrow summary
                     projectTitle: "Unknown Project", // Can't get from failed escrow summary
@@ -154,7 +163,7 @@ export function DisputeResolution({
                 break;
               }
             }
-          } catch (directError) {}
+          } catch (directError) { }
         }
       }
 
@@ -165,7 +174,8 @@ export function DisputeResolution({
         const newDisputeCount = disputes.length - lastDisputeCount;
         toast({
           title: "New Disputes Detected",
-          description: `${newDisputeCount} new dispute${newDisputeCount > 1 ? "s" : ""} require${newDisputeCount > 1 ? "" : "s"} your attention`,
+          description: `${newDisputeCount} new dispute${newDisputeCount > 1 ? "s" : ""
+            } require${newDisputeCount > 1 ? "" : "s"} your attention`,
           variant: "destructive",
         });
       }
@@ -194,55 +204,157 @@ export function DisputeResolution({
 
     try {
       setIsResolving(true);
-      const contract = getContract(CONTRACTS.ORBITWORK_ESCROW);
-      if (!contract) return;
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
+      if (!contract) {
+        toast({
+          title: "Contract Error",
+          description: "Contract not available. Please reconnect your wallet.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Convert beneficiary amount to wei - handle large numbers safely
-      const amountInTokens = beneficiaryAmount;
-      // Use BigInt to handle large numbers properly
-      const amountInWei = BigInt(Math.floor(amountInTokens)) * BigInt(1e7);
+      // Convert beneficiary amount to wei - handle decimals properly
+      const amountInTokens = Number(beneficiaryAmount);
+      // Multiply by 1e18 to convert to wei, then floor to avoid decimals
+      const amountInWei = BigInt(Math.floor(amountInTokens * 1e18));
       const beneficiaryAmountWei = amountInWei.toString();
+
+      toast({
+        title: "Submitting Resolution",
+        description: "Please confirm the transaction in your wallet",
+      });
 
       const txHash = await contract.send(
         "resolveDispute",
         "no-value",
-        selectedDispute.escrowId,
+        Number(selectedDispute.escrowId),
         selectedDispute.milestoneIndex,
-        beneficiaryAmountWei
+        beneficiaryAmountWei,
+        resolutionReason || "No reason provided"
       );
 
+      // Wait for transaction confirmation
       toast({
-        title: "Dispute Resolved",
-        description: `Resolution submitted. Transaction: ${txHash}`,
+        title: "Transaction Submitted",
+        description: "Waiting for blockchain confirmation...",
       });
 
-      // Add cross-wallet notification with admin reason
-      addCrossWalletNotification(
-        {
-          type: "dispute",
-          title: "Dispute Resolved by Admin",
-          message: `Dispute #${selectedDispute.escrowId} has been resolved. Admin reason: ${resolutionReason}`,
-          actionUrl: `/dashboard?escrow=${selectedDispute.escrowId}`,
-          data: {
-            escrowId: selectedDispute.escrowId,
-            milestoneIndex: selectedDispute.milestoneIndex,
-            adminReason: resolutionReason,
-            beneficiaryAmount: beneficiaryAmount,
-          },
-        },
-        selectedDispute.clientAddress,
-        selectedDispute.freelancerAddress
-      );
+      // Wait for transaction to be mined using polling
+      let receipt;
+      let attempts = 0;
+      const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minute timeout
 
-      setResolutionDialogOpen(false);
-      setSelectedDispute(null);
-      setResolutionReason(""); // Clear the reason
-      await fetchDisputes(false); // Refresh disputes without showing loading
-      onDisputeResolved();
+      while (attempts < maxAttempts) {
+        try {
+          if (typeof window !== "undefined" && window.ethereum) {
+            receipt = await (window.ethereum as any).request({
+              method: "eth_getTransactionReceipt",
+              params: [txHash],
+            });
+
+            if (receipt) {
+              break;
+            }
+          }
+        } catch (error) {
+          console.error("Error checking transaction receipt:", error);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+        attempts++;
+      }
+
+      if (!receipt) {
+        throw new Error(
+          "Transaction timeout - please check the blockchain explorer"
+        );
+      }
+
+      if (receipt.status === "0x1") {
+        // Determine winner based on beneficiary amount
+        const freelancerGets = beneficiaryAmount;
+        const clientGets = selectedDispute.milestoneAmount - beneficiaryAmount;
+        const winner =
+          freelancerGets > clientGets
+            ? "Freelancer"
+            : freelancerGets < clientGets
+              ? "Client"
+              : "Split";
+
+        const winnerMessage =
+          winner === "Split"
+            ? "Funds split 50/50"
+            : `${winner} wins (${winner === "Freelancer"
+              ? freelancerGets.toFixed(2)
+              : clientGets.toFixed(2)
+            } tokens)`;
+
+        // Add cross-wallet notification with winner and admin reason
+        addCrossWalletNotification(
+          {
+            type: "dispute",
+            title: "Dispute Resolved",
+            message: `Dispute #${selectedDispute.escrowId
+              } resolved. ${winnerMessage}. ${resolutionReason ? `Admin reason: ${resolutionReason}` : ""
+              }`,
+            actionUrl: `/dashboard?escrow=${selectedDispute.escrowId}`,
+            data: {
+              escrowId: selectedDispute.escrowId,
+              milestoneIndex: selectedDispute.milestoneIndex,
+              adminReason: resolutionReason || "No reason provided",
+              beneficiaryAmount: beneficiaryAmount,
+              winner: winner,
+              freelancerAmount: freelancerGets,
+              clientAmount: clientGets,
+            },
+          },
+          selectedDispute.clientAddress,
+          selectedDispute.freelancerAddress
+        );
+
+        // Also notify freelancer
+        addCrossWalletNotification(
+          {
+            type: "dispute",
+            title: "Dispute Resolved",
+            message: `Dispute #${selectedDispute.escrowId
+              } resolved. ${winnerMessage}. ${resolutionReason ? `Admin reason: ${resolutionReason}` : ""
+              }`,
+            actionUrl: `/freelancer?escrow=${selectedDispute.escrowId}`,
+            data: {
+              escrowId: selectedDispute.escrowId,
+              milestoneIndex: selectedDispute.milestoneIndex,
+              adminReason: resolutionReason || "No reason provided",
+              winner: winner,
+              freelancerAmount: freelancerGets,
+              clientAmount: clientGets,
+            },
+          },
+          selectedDispute.freelancerAddress,
+          selectedDispute.clientAddress
+        );
+
+        toast({
+          title: "Dispute Resolved Successfully",
+          description: `Transaction confirmed. ${winnerMessage}`,
+        });
+
+        setResolutionDialogOpen(false);
+        setSelectedDispute(null);
+        setResolutionReason("");
+        await fetchDisputes(false); // Refresh disputes without showing loading
+        onDisputeResolved();
+      } else {
+        throw new Error("Transaction failed on blockchain");
+      }
     } catch (error: any) {
+      console.error("Dispute resolution error:", error);
       toast({
         title: "Resolution Failed",
-        description: error.message || "Failed to resolve dispute",
+        description:
+          error.message ||
+          "Failed to resolve dispute. Please check your wallet connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -316,15 +428,17 @@ export function DisputeResolution({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="border-red-200 bg-red-100/80 p-4 shadow-lg">
+                <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10 p-4 shadow-lg hover:shadow-xl transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                        <span className="font-semibold text-red-700">
+                        <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <span className="font-semibold text-orange-900 dark:text-orange-100">
                           Dispute #{dispute.escrowId}
                         </span>
-                        <Badge variant="destructive">Disputed</Badge>
+                        <Badge className="bg-orange-600 hover:bg-orange-700 text-white">
+                          Disputed
+                        </Badge>
                       </div>
 
                       <p className="text-sm text-muted-foreground mb-2">
