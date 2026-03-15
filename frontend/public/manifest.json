@@ -1,0 +1,21 @@
+{
+  "name": "Orbitwork - Freelance on Uniswap v4",
+  "short_name": "Orbitwork",
+  "description": "Decentralized freelance marketplace powered by Uniswap v4 Hooks",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

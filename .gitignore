@@ -40,7 +40,7 @@ broadcast
 cache
 out
 forge-cache
-lib/
+orbitwork-hook/lib/
 
 # Hardhat
 artifacts
