@@ -1,4 +1,4 @@
-
+"use client";
 
 import { useState } from "react";
 import { Bell, X, Check, Trash2, ExternalLink } from "lucide-react";
