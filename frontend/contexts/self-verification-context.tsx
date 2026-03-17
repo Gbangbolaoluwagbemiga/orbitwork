@@ -71,7 +71,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       const autoEndpointType = endpointIsPlayground ? "https" : (endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https"));
       const devModeAuto = endpointIsPlayground ? false : (typeof autoEndpointType === "string" && autoEndpointType.includes("staging"));
       const scopeEnv = (process.env.NEXT_PUBLIC_SELF_SCOPE as string) || "";
-      const scopeAuto = endpointIsPlayground ? "self-playground" : (scopeEnv && scopeEnv !== "self-playground" ? scopeEnv : "orbitwork-identity");
+      const scopeAuto = endpointIsPlayground ? "self-playground" : (scopeEnv && scopeEnv !== "self-playground" ? scopeEnv : "secureflow-identity");
 
       const disclosuresPayload = {
         minimumAge: 18,
@@ -79,7 +79,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
 
       const app = new SelfAppBuilder({
         appName: "OrbitWork",
-        logoBase64: `${window.location.origin}/orbitwork-logo.svg`,
+        logoBase64: `${window.location.origin}/secureflow-logo.svg`,
         endpointType: autoEndpointType,
         endpoint: endpointOverride,
         scope: scopeAuto,
@@ -355,7 +355,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       typeof reason === "string" && reason.includes("Unsupported number of inputs")
         ? "This usually means the Self app has no document loaded for staging. Add a mock passport in the Self app settings and retry."
         : (typeof reason === "string" && reason.includes("Config not found"))
-        ? "Ensure scope and endpoint type match. Use self-playground only with the Playground endpoint; use orbitwork-identity with your own HTTPS endpoint."
+        ? "Ensure scope and endpoint type match. Use self-playground only with the Playground endpoint; use secureflow-identity with your own HTTPS endpoint."
         : (isStaging && (reason === "error" || (typeof reason === "string" && reason.toLowerCase() === "error")))
         ? "On staging, ensure you have a mock passport set up in the Self mobile app before scanning the QR."
         : (!isStaging && isPlayground && (reason === "error" || (typeof reason === "string" && reason.toLowerCase() === "error")))

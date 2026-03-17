@@ -1,3 +1,5 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Award, TrendingUp } from "lucide-react";
@@ -12,7 +14,7 @@ interface ReputationScoreProps {
 }
 
 export function ReputationScore({
-  // address, // Unused
+  address,
   completedEscrows,
   totalVolume,
   className,
@@ -20,7 +22,7 @@ export function ReputationScore({
 }: ReputationScoreProps) {
   const calculateScore = () => {
     // Different reputation calculation based on role
-    const volumeInTokens = Number.parseFloat(totalVolume) / 1e7; // Convert from wei to tokens
+    const volumeInTokens = Number.parseFloat(totalVolume) / 1e18; // Convert from wei to tokens
 
     if (role === "client") {
       // Client reputation: based on successful payments and volume
@@ -166,7 +168,7 @@ export function ReputationScore({
               {role === "client" ? "Total Spent" : "Total Earned"}
             </span>
             <span className="font-semibold">
-              {(Number.parseFloat(totalVolume) / 1e7).toFixed(2)} tokens
+              {(Number.parseFloat(totalVolume) / 1e18).toFixed(2)} tokens
             </span>
           </div>
           <div className="flex justify-between text-sm">
