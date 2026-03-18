@@ -3,7 +3,7 @@
 import React from "react";
 import { createAppKit } from "@reown/appkit/react";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
-import { ethers } from "ethers";
+import { AppKitNetwork } from "@reown/appkit/networks";
 
 // Get projectId from environment
 export const projectId =
@@ -35,7 +35,7 @@ const networks = [
 createAppKit({
   adapters: [new EthersAdapter()],
   metadata,
-  networks: networks as any,
+  networks: networks as [AppKitNetwork, ...AppKitNetwork[]],
   projectId,
   features: {
     analytics: true,

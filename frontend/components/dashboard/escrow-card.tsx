@@ -1,14 +1,18 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { Clock, DollarSign, ChevronDown, ChevronUp, Star } from "lucide-react";
+import { Clock, DollarSign, ChevronDown, ChevronUp, AlertTriangle, Loader2 } from "lucide-react";
 import { MilestoneActions } from "@/components/milestone-actions";
 import { RateFreelancer } from "@/components/rating-freelancer";
 import { YieldTracker } from "@/components/dashboard/yield-tracker";
+import { useWeb3 } from "@/contexts/web3-context";
+import { ORBIT_WORK_ABI } from "@/lib/web3/abis";
+import { CONTRACTS } from "@/lib/web3/config";
 import type { Escrow, Milestone } from "@/lib/web3/types";
 
 interface EscrowCardProps {
@@ -50,6 +54,24 @@ export function EscrowCard({
   onRatingSubmitted,
   onViewApplications,
 }: EscrowCardProps) {
+  const { getContract } = useWeb3();
+  const [claimingRefund, setClaimingRefund] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+
+  const handleClaimRefund = useCallback(async () => {
+    setClaimingRefund(true);
+    setRefundError(null);
+    try {
+      const contract = getContract(CONTRACTS.ORBIT_WORK_ESCROW, ORBIT_WORK_ABI);
+      if (!contract) throw new Error("Wallet not connected");
+      await contract.call("raiseDeadlineDispute", escrow.id);
+      window.dispatchEvent(new CustomEvent("escrowUpdated"));
+    } catch (e: any) {
+      setRefundError(e?.reason || e?.message || "Transaction failed");
+    } finally {
+      setClaimingRefund(false);
+    }
+  }, [escrow.id, getContract]);
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -255,6 +277,48 @@ export function EscrowCard({
                 </div>
               </div>
             </div>
+
+            {/* Client Refund Banner — deadline passed + no milestones submitted */}
+            {(() => {
+              const daysLeft = calculateDaysLeft(escrow.createdAt, escrow.duration);
+              const noSubmissions = escrow.milestones.every(
+                (m) => m.status === "pending" || m.status === "not_started"
+              );
+              const canClaimRefund =
+                escrow.isClient &&
+                daysLeft < 0 &&
+                noSubmissions &&
+                (escrow.status === "pending" || escrow.status === "active");
+
+              if (!canClaimRefund) return null;
+              return (
+                <div className="mt-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-500">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span>Deadline passed — no work was submitted by the freelancer.</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Opening a dispute notifies the admin/arbiter who will review and issue a full refund to you.
+                  </p>
+                  {refundError && (
+                    <p className="text-xs text-red-400">{refundError}</p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-fit border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                    onClick={handleClaimRefund}
+                    disabled={claimingRefund}
+                  >
+                    {claimingRefund ? (
+                      <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Opening Dispute…</>
+                    ) : (
+                      "Open Dispute"
+                    )}
+                  </Button>
+                </div>
+              );
+            })()}
 
             {expandedEscrow === escrow.id && (
               <div className="space-y-4 pt-4 border-t">

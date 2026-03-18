@@ -225,6 +225,49 @@ contract OrbitWork is EscrowCore {
         emit EscrowUpdated(eId, EscrowStatus.Expired, block.timestamp);
     }
 
+    /**
+     * @notice Client opens a dispute when the deadline has passed and the
+     *         freelancer never submitted any milestone work.
+     *         Sets the escrow status to Disputed so the admin/arbiter can
+     *         quickly resolve it as a full refund without waiting 30 days.
+     * @param eId The escrow ID
+     */
+    function raiseDeadlineDispute(uint256 eId)
+        external
+        validEscrow(eId)
+        onlyDepositor(eId)
+        whenNotPaused
+    {
+        EscrowData storage e = escrows[eId];
+        require(block.timestamp > e.deadline, "deadline not passed");
+        require(
+            e.status == EscrowStatus.Pending || e.status == EscrowStatus.InProgress,
+            "wrong status"
+        );
+
+        // Check that NO milestone has ever been submitted — if one was,
+        // use the normal disputeMilestone() flow instead.
+        bool anySubmitted = false;
+        for (uint256 i = 0; i < e.milestoneCount; i++) {
+            if (milestones[eId][i].status != MilestoneStatus.NotStarted) {
+                anySubmitted = true;
+                break;
+            }
+        }
+        require(!anySubmitted, "use disputeMilestone(): work was submitted");
+
+        // Mark first milestone as Disputed so resolveDispute() can act on it
+        milestones[eId][0].status = MilestoneStatus.Disputed;
+        milestones[eId][0].disputedAt = block.timestamp;
+        milestones[eId][0].disputedBy = msg.sender;
+        milestones[eId][0].disputeReason = "Deadline passed with no work submitted";
+
+        e.status = EscrowStatus.Disputed;
+
+        emit MilestoneDisputed(eId, 0, msg.sender, "Deadline passed with no work submitted", block.timestamp);
+        emit EscrowUpdated(eId, EscrowStatus.Disputed, block.timestamp);
+    }
+
     function extendDeadline(uint256 eId, uint256 ext) external override validEscrow(eId) onlyDepositor(eId) whenNotPaused {
         require(ext > 0 && ext <= 30 days, "ext");
         EscrowData storage e = escrows[eId];

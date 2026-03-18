@@ -36,18 +36,18 @@ export class ContractService {
     }
   }
 
-  async getApplications(escrowId: number) {
+  async getApplications(_escrowId: number) {
     // This depends on the contract having an applications mapping
     // If not, we might need to fetch events
     return [];
   }
 
-  async submitRating(escrowId: number, rating: number, review: string, signerAddress?: string) {
+  async submitRating(escrowId: number, rating: number, review: string, _signerAddress?: string) {
     // Implementation for submitting ratings
     console.log("Submitting rating:", { escrowId, rating, review });
   }
 
-  async selectFreelancer(escrowId: number, freelancer: string, signerAddress: string) {
+  async selectFreelancer(escrowId: number, freelancer: string, _signerAddress: string) {
     // Implementation for selecting freelancer
     console.log("Selecting freelancer:", { escrowId, freelancer });
   }

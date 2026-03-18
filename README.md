@@ -15,8 +15,8 @@ We are live on **Unichain Sepolia Testnet**!
 ### Contract Addresses (Unichain Sepolia)
 | Contract | Address | Description |
 |----------|---------|-------------|
-| **OrbitWork (Unified)** | `0x8a53cc2f0951D092d2686134f99b36d06F9a7F75` | Unified Escrow, Ratings, and Marketplace logic. |
-| **EscrowHook** | `0x8a53cc2f0951D092d2686134f99b36d06F9a7F75` | *Used as both Core and Hook logic in this release.* |
+| **OrbitWork (V3)** | `0x03f043de36e0b92b5bafa35754a84cdd7a0104ee` | Core Escrow logic with 0% upfront fees. |
+| **EscrowHook** | `0xb6941042b05c84315e877817b9bd946ea6030a40` | Uniswap v4 Hook for liquid escrow yield generation. |
 
 ### Contract Addresses (Reactive Network - Kopli/Lasna)
 | Contract | Address | Description |
@@ -45,8 +45,8 @@ We are live on **Unichain Sepolia Testnet**!
 *   **Automated Liquidity Management**: The Hook handles the complexity of adding/removing liquidity during escrow lifecycle events (creation, release, refund).
 
 ### 🛡️ Verified Identity & Reputation
-*   **Self Protocol Integration**: Users can verify their identity on-chain for trusted interactions.
-*   **Fee Discounts**: Verified users enjoy **50% off** standard platform fees.
+*   **0% Upfront Fees**: OrbitWork relies entirely on yield, charging 0% to clients at escrow creation.
+*   **Verified Identity**: Users can verify their identity on-chain for trusted interactions.
 *   **On-Chain Ratings**: Every completed job generates an immutable review, building a verifiable reputation history.
 
 ### ⚡ Unichain Native

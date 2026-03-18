@@ -123,7 +123,7 @@ export function ReviewStep({
                 {formData.totalBudget} tokens
               </span>
             </div>
-            {platformFeeBP > 0 && (
+            {platformFeeBP > 0 ? (
               <>
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="text-sm">Platform Fee ({feePercentage}%):</span>
@@ -138,6 +138,16 @@ export function ReviewStep({
                   </span>
                 </div>
               </>
+            ) : (
+              <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center justify-between text-primary mb-1">
+                  <span className="text-sm font-semibold">Platform Fee:</span>
+                  <span className="text-sm font-bold">0.00%</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-tight italic">
+                  OrbitWork charges 0% upfront. This project is powered by Liquid Escrow yield (shared between platform and freelancer).
+                </p>
+              </div>
             )}
             {!isTotalValid && (
               <p className="text-sm text-destructive mt-2">
