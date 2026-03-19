@@ -24,7 +24,7 @@ contract MintAndBoost is Script {
     // Unichain Sepolia Addresses
     address constant SWAP_ROUTER = 0x9140a78c1A137c7fF1c151EC8231272aF78a99A4;
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B;
-    address constant ESCROW_HOOK = 0x637696BE3514c4d65Ee6558e491eaa49EfbC4a40;
+    address constant ESCROW_HOOK = 0x659D9098Cfe4bA29814150F4dae0A97a6b890a40;
 
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
@@ -35,6 +35,9 @@ contract MintAndBoost is Script {
         // --- 1. Mint USDC ---
         console2.log("Minting 1,000,000 MockUSDC...");
         IMockERC20(USDC).mint(user, 1_000_000 * 10**6);
+        
+        // Mint to OrbitWork to cover refunds for old jobs with "stuck" funds
+        IMockERC20(USDC).mint(0x62C4dd1414AB677B5766264Fa5C263A13D31d547, 10_000 * 10**6);
 
         // --- 2. Yield Boost (HIGH POWER) ---
         PoolKey memory key = PoolKey({
@@ -49,13 +52,13 @@ contract MintAndBoost is Script {
         
         console2.log("Generating high-intensity yield boost...");
         
-        // Loop 5 times with 0.01 ETH each (Total 0.05 ETH + Gas)
-        for (uint i = 0; i < 5; i++) {
-            swapRouter.swap{value: 0.01 ether}(
+        // Loop 3 times with 0.005 ETH each (Total 0.015 ETH + Gas)
+        for (uint i = 0; i < 3; i++) {
+            swapRouter.swap{value: 0.005 ether}(
                 key,
                 SwapParams({
                     zeroForOne: true,
-                    amountSpecified: -0.01 ether,
+                    amountSpecified: -0.005 ether,
                     sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
                 }),
                 PoolSwapTest.TestSettings({
@@ -64,7 +67,7 @@ contract MintAndBoost is Script {
                 }),
                 ""
             );
-            console2.log("Swap", i+1, "of 0.01 ETH successful.");
+            console2.log("Swap", i+1, "of 0.005 ETH successful.");
         }
 
         console2.log("==========================================");

@@ -15,7 +15,7 @@ interface IOrbitWork {
 }
 
 contract ClearJobs is Script {
-    address constant ORBIT_WORK = 0xEe8a174c6fabDEb52a5d75e8e3F951EFbC667fDB;
+    address constant ORBIT_WORK = 0x62C4dd1414AB677B5766264Fa5C263A13D31d547;
 
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
