@@ -353,34 +353,75 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         require(msg.sender == escrowCore, "Only EscrowCore");
         
         LPPosition storage position = escrowPositions[escrowId];
-        require(position.isActive, "No active LP position");
+        if (!position.isActive) return (milestoneAmount, 0);
 
-        // Force update yield before distribution
-        _updateYield(escrowId);
+        // 1. Force update yield before distribution (catches potential reverts)
+        try this.updateYieldExternal(escrowId) {} catch {}
 
-        // Calculate yield earned since last action
+        // 2. Calculate yield earned
         uint256 yieldEarned = position.yieldAccumulated;
 
-        // Distribute yield: 70% to freelancer, 30% to platform
+        // Distribute yield: 60% to freelancer, 40% platform
         uint256 freelancerYield = (yieldEarned * FREELANCER_SHARE) / 10000;
         platformYield = yieldEarned - freelancerYield;
 
         // Total payment to freelancer = milestone + yield bonus
         payment = milestoneAmount + freelancerYield;
 
+        // 3. CRITICAL: Withdraw milestone funds from Uniswap back to OrbitWork
+        // Since OrbitWork only kept 20% reserve, we must return the 80% portion
+        // proportionally from the Hook's LP position.
+        uint128 liquidityToRemove = 0;
+        if (position.liquidity > 0) {
+            // Remove proportional liquidity: (milestone / total) * total_liquidity
+            // We approximate by using the 80% ratio
+            uint256 totalEscrowAmount = (position.reserveAmount * 10000) / RESERVE_RATIO;
+            if (totalEscrowAmount > 0) {
+                liquidityToRemove = uint128((uint256(position.liquidity) * milestoneAmount) / totalEscrowAmount);
+                if (liquidityToRemove > position.liquidity) liquidityToRemove = position.liquidity;
+            }
+        }
+
+        if (liquidityToRemove > 0) {
+            try poolManager.unlock(abi.encode(CallbackData({
+                escrowId: escrowId,
+                key: position.key,
+                params: ModifyLiquidityParams({
+                    tickLower: position.tickLower,
+                    tickUpper: position.tickUpper,
+                    liquidityDelta: -int256(uint256(liquidityToRemove)),
+                    salt: bytes32(0)
+                }),
+                sender: msg.sender
+            }))) {
+                position.liquidity -= liquidityToRemove;
+            } catch {
+                // If withdrawal fails, OrbitWork might still revert due to low balance,
+                // but we've tried our best.
+            }
+        }
+
         // Reset accumulated yield
         position.yieldAccumulated = 0;
         totalYieldDistributed += yieldEarned;
 
-        emit YieldDistributed(escrowId, freelancer, freelancerYield, platformYield);
-
         return (payment, platformYield);
+    }
+
+    /**
+     * @notice Helper to allow try-catch on internal yield updates
+     */
+    function updateYieldExternal(uint256 escrowId) external {
+        require(msg.sender == address(this), "Internal only");
+        _updateYield(escrowId);
     }
 
     function _updateYield(uint256 escrowId) internal {
         LPPosition storage pos = escrowPositions[escrowId];
         if (!pos.isActive || pos.liquidity == 0) return;
 
+        // Standard call - it's safe because getFeeGrowthInside uses staticcall internally.
+        // We use try this.updateYieldExternal in onMilestoneApproved to handle potential reverts.
         (uint256 fgi0, uint256 fgi1) = poolManager.getFeeGrowthInside(pos.key.toId(), pos.tickLower, pos.tickUpper);
         
         unchecked {

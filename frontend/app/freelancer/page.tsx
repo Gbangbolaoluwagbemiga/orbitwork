@@ -53,6 +53,8 @@ import {
   RefreshCw,
   Clock,
   Star,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -134,6 +136,32 @@ export default function FreelancerPage() {
     "newest" | "oldest" | "amount-high" | "amount-low" | "status"
   >("newest");
   const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedMilestones, setCollapsedMilestones] = useState<Set<string>>(new Set());
+  const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set());
+
+  const toggleMilestoneCollapse = (escrowId: string) => {
+    setCollapsedMilestones((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(escrowId)) {
+        newSet.delete(escrowId);
+      } else {
+        newSet.add(escrowId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleCardCollapse = (escrowId: string) => {
+    setCollapsedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(escrowId)) {
+        newSet.delete(escrowId);
+      } else {
+        newSet.add(escrowId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (wallet.isConnected) {
@@ -1390,28 +1418,52 @@ export default function FreelancerPage() {
                                 : `Project ID: #${escrow.id}`}
                             </CardDescription>
                           </div>
-                          <Badge
-                            className={getStatusColor(
-                              escrow.milestones.some(
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={getStatusColor(
+                                escrow.milestones.some(
+                                  (m) =>
+                                    m.status === "disputed" ||
+                                    m.status === "rejected"
+                                )
+                                  ? "terminated"
+                                  : escrow.status
+                              )}
+                            >
+                              {escrow.milestones.some(
                                 (m) =>
                                   m.status === "disputed" ||
                                   m.status === "rejected"
                               )
                                 ? "terminated"
-                                : escrow.status
-                            )}
-                          >
-                            {escrow.milestones.some(
-                              (m) =>
-                                m.status === "disputed" ||
-                                m.status === "rejected"
-                            )
-                              ? "terminated"
-                              : escrow.status}
-                          </Badge>
+                                : escrow.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleCardCollapse(escrow.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              {collapsedCards.has(escrow.id) ? (
+                                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              ) : (
+                                <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+
+                      <motion.div
+                        initial={false}
+                        animate={{
+                          height: collapsedCards.has(escrow.id) ? 0 : "auto",
+                          opacity: collapsedCards.has(escrow.id) ? 0 : 1,
+                        }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                           <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                             <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1931,114 +1983,137 @@ export default function FreelancerPage() {
                               );
                             }
 
-                            return (
-                              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">
-                                  Submit Milestone {currentMilestoneIndex + 1}
-                                </h5>
-
-                                {/* Client Requirements */}
-                                {currentMilestone.description &&
-                                  !currentMilestone.description.includes(
-                                    "To be defined"
-                                  ) &&
-                                  currentMilestone.description !==
-                                  `Milestone ${currentMilestoneIndex + 1
-                                  }` && (
-                                    <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                                      <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                        Client Requirements:
-                                      </div>
-                                      <div className="text-sm text-blue-700 dark:text-blue-300">
-                                        {currentMilestone.description}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Show input form only if not submitted */}
-                                {!isSubmitted && (
-                                  <div className="space-y-3">
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Your Work Description
-                                      </label>
-                                      <Textarea
-                                        value={
-                                          milestoneDescriptions[milestoneKey] ||
-                                          ""
-                                        }
-                                        onChange={(e) =>
-                                          setMilestoneDescriptions((prev) => ({
-                                            ...prev,
-                                            [milestoneKey]: e.target.value,
-                                          }))
-                                        }
-                                        className="text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                                        rows={3}
-                                        placeholder="Describe what you've completed for this milestone..."
-                                      />
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                      {canSubmit && (
-                                        <Button
-                                          size="sm"
-                                          onClick={() =>
-                                            submitMilestone(
-                                              escrow.id,
-                                              currentMilestoneIndex
-                                            )
-                                          }
-                                          disabled={
-                                            submittingMilestone ===
-                                            milestoneKey ||
-                                            !milestoneDescriptions[
-                                              milestoneKey
-                                            ]?.trim()
-                                          }
-                                        >
-                                          {submittingMilestone === milestoneKey
-                                            ? "Submitting..."
-                                            : "Submit Milestone"}
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Show submitted status if milestone is submitted */}
-                                {isSubmitted && (
-                                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Badge className="bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200">
-                                        Submitted - Awaiting Approval
-                                      </Badge>
-                                    </div>
-                                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                                      Your milestone has been submitted and is
-                                      waiting for client approval.
-                                    </p>
+                              return (
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h5 className="font-semibold text-blue-900 dark:text-blue-100">
+                                      Submit Milestone {currentMilestoneIndex + 1}
+                                    </h5>
                                     <Button
+                                      variant="ghost"
                                       size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedEscrowId(escrow.id);
-                                        setSelectedMilestoneIndex(
-                                          currentMilestoneIndex
-                                        );
-                                        setDisputeReason("");
-                                        setShowDisputeDialog(true);
-                                      }}
-                                      className="border-yellow-300 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-800"
+                                      onClick={() => toggleMilestoneCollapse(escrow.id)}
+                                      className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-800"
                                     >
-                                      Dispute
+                                      {collapsedMilestones.has(escrow.id) ? (
+                                        <ChevronDown className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+                                      ) : (
+                                        <ChevronUp className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+                                      )}
                                     </Button>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
+
+                                  {!collapsedMilestones.has(escrow.id) && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      transition={{ duration: 0.3 }}
+                                      className="overflow-hidden"
+                                    >
+                                      {/* Client Requirements */}
+                                      {currentMilestone.description &&
+                                        !currentMilestone.description.includes(
+                                          "To be defined"
+                                        ) &&
+                                        currentMilestone.description !==
+                                        `Milestone ${currentMilestoneIndex + 1
+                                        }` && (
+                                          <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                                            <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                              Client Requirements:
+                                            </div>
+                                            <div className="text-sm text-blue-700 dark:text-blue-300">
+                                              {currentMilestone.description}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                      {/* Show input form only if not submitted */}
+                                      {!isSubmitted && (
+                                        <div className="space-y-3">
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                              Your Work Description
+                                            </label>
+                                            <Textarea
+                                              value={
+                                                milestoneDescriptions[milestoneKey] ||
+                                                ""
+                                              }
+                                              onChange={(e) =>
+                                                setMilestoneDescriptions((prev) => ({
+                                                  ...prev,
+                                                  [milestoneKey]: e.target.value,
+                                                }))
+                                              }
+                                              className="text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                              rows={3}
+                                              placeholder="Describe what you've completed for this milestone..."
+                                            />
+                                          </div>
+
+                                          <div className="flex gap-2">
+                                            {canSubmit && (
+                                              <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                  submitMilestone(
+                                                    escrow.id,
+                                                    currentMilestoneIndex
+                                                  )
+                                                }
+                                                disabled={
+                                                  submittingMilestone ===
+                                                  milestoneKey ||
+                                                  !milestoneDescriptions[
+                                                    milestoneKey
+                                                  ]?.trim()
+                                                }
+                                              >
+                                                {submittingMilestone === milestoneKey
+                                                  ? "Submitting..."
+                                                  : "Submit Milestone"}
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Show submitted status if milestone is submitted */}
+                                      {isSubmitted && (
+                                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Badge className="bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200">
+                                              Submitted - Awaiting Approval
+                                            </Badge>
+                                          </div>
+                                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                                            Your milestone has been submitted and is
+                                            waiting for client approval.
+                                          </p>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setSelectedEscrowId(escrow.id);
+                                              setSelectedMilestoneIndex(
+                                                currentMilestoneIndex
+                                              );
+                                              setDisputeReason("");
+                                              setShowDisputeDialog(true);
+                                            }}
+                                            className="border-yellow-300 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-800"
+                                          >
+                                            Dispute
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </motion.div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
 
                         {/* Actions */}
                         <div className="flex gap-3">
@@ -2054,7 +2129,8 @@ export default function FreelancerPage() {
                             )}
                         </div>
                       </CardContent>
-                    </Card>
+                    </motion.div>
+                  </Card>
                   </motion.div>
                 ))}
               </div>

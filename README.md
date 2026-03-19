@@ -15,8 +15,8 @@ We are live on **Unichain Sepolia Testnet**!
 ### Contract Addresses (Unichain Sepolia)
 | Contract | Address | Description |
 |----------|---------|-------------|
-| **OrbitWork** | `0x58cc32920E25e9aaf528dc6F37996d7670d5374A` | Core Escrow logic with 0% upfront fees. |
-| **EscrowHook** | `0xc6721B7fad95Ae93e3c2ded00908a88299740a40` | Uniswap v4 Hook for liquid escrow yield generation. |
+| **OrbitWork** | `0x62C4dd1414AB677B5766264Fa5C263A13D31d547` | Core Escrow logic with 0% upfront fees. |
+| **EscrowHook** | `0x637696BE3514c4d65Ee6558e491eaa49EfbC4a40` | Uniswap v4 Hook for liquid escrow yield generation. |
 
 ### Contract Addresses (Reactive Network - Kopli/Lasna)
 | Contract | Address | Description |

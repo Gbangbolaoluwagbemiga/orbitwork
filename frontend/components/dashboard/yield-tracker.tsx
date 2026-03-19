@@ -53,28 +53,18 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                     }
                 }
 
-                // On testnet there's no organic swap volume so on-chain yield is 0.
-                // Estimate projected yield at a realistic Uniswap v4 LP APR (~0.05%/day = ~18% APR)
-                // so the demo shows design intent. Real yield always overrides.
-                const DAILY_LP_RATE = 0.0005; // 0.05% per day (conservative Uniswap v4 LP estimate)
-                
-                // CRITICAL: If real yield > 0, we use it! 
-                // We only use estimation if real yield is exactly 0.
+                // We now only display real on-chain yield.
+                // If real yield is 0, we show 0 (no more dummy data).
                 const useRealYield = currentYield > 0;
                 
-                const estimatedYield = useRealYield
-                    ? currentYield
-                    : lpAmount * DAILY_LP_RATE * Math.max(daysActive, 1);
-                
-                const projectedYield = useRealYield
-                    ? currentYield * 21
-                    : lpAmount * DAILY_LP_RATE * 30; // 30-day projection
+                const yieldAccumulated = currentYield;
+                const projectedYield = currentYield * 30; // 30-day projection based on current live yield
 
                 if (mounted) {
                     setYieldData({
                         lpAmount,
                         reserveAmount,
-                        yieldAccumulated: estimatedYield,
+                        yieldAccumulated,
                         projectedYield,
                         isActive: true,
                         isReal: useRealYield,
@@ -116,7 +106,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                             </Badge>
                         </CardTitle>
                         <CardDescription className="text-xs mt-1">
-                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}${yieldData.isReal ? " (Live)" : " (Est.)"}`}
+                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}${yieldData.isReal ? " (Live)" : " (Pending Swaps)"}`}
                         </CardDescription>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -157,7 +147,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                                 <span className="text-xs font-medium">Yield Earned</span>
                             </div>
                             <span className="text-sm font-bold text-emerald-500">
-                                +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}
+                                +{yieldData.yieldAccumulated.toFixed(6)} {tokenSymbol}
                             </span>
                         </div>
 
@@ -169,11 +159,11 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                                     <Coins className="h-3 w-3" />
                                     Freelancer (60%)
                                 </span>
-                                <span className="font-semibold">+${freelancerYield.toFixed(6)} ${tokenSymbol}</span>
+                                <span className="font-semibold">+{freelancerYield.toFixed(6)} {tokenSymbol}</span>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>Platform (40%)</span>
-                                <span>${platformYield.toFixed(6)} ${tokenSymbol}</span>
+                                <span>{platformYield.toFixed(6)} {tokenSymbol}</span>
                             </div>
                         </div>
 
@@ -182,7 +172,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                             <div className="flex items-center justify-between text-[10px]">
                                 <span className="text-muted-foreground">Projected Total Yield:</span>
                                 <span className="font-semibold text-emerald-500">
-                                    ~${yieldData.projectedYield.toFixed(6)} ${tokenSymbol}
+                                    ~{yieldData.projectedYield.toFixed(6)} {tokenSymbol}
                                 </span>
                             </div>
                         </div>
@@ -191,7 +181,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                     {/* Active indicator */}
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1">
                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Earning swap fees for {daysActive} days</span>
+                        <span>Earning swap fees since escrow creation</span>
                     </div>
                 </CardContent>
             )}

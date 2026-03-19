@@ -25,7 +25,7 @@ contract SwapScript is Script {
     // Unichain Sepolia Addresses
     address constant SWAP_ROUTER = 0x9140a78c1A137c7fF1c151EC8231272aF78a99A4; 
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B;
-    address constant ESCROW_HOOK = 0xe83399DDA32AA87515d665b58EE3f1D8050C8a40;
+    address constant ESCROW_HOOK = 0x637696BE3514c4d65Ee6558e491eaa49EfbC4a40;
 
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");

@@ -48,6 +48,7 @@ interface MilestoneActionsProps {
   showSubmitButton?: boolean; // New prop to control submit button visibility
   payerAddress?: string; // Client address for notifications
   beneficiaryAddress?: string; // Freelancer address for notifications
+  tokenDecimals?: number; // Token decimals for amount calculation
 }
 
 import { ENGAGEMENT_REWARDS_ABI } from "@/lib/web3/engagement-rewards-abi";
@@ -64,6 +65,7 @@ export function MilestoneActions({
   showSubmitButton = true, // Default to true for backward compatibility
   payerAddress,
   beneficiaryAddress,
+  tokenDecimals = 18,
 }: MilestoneActionsProps) {
   const { getContract, wallet } = useWeb3();
 
@@ -366,6 +368,10 @@ export function MilestoneActions({
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
               const iface = new ethers.Interface(ORBIT_WORK_ABI);
+              console.log(`🚀 [Approve] Gasless approval for escrow ${escrowId}, milestone index ${milestoneIndex}`, {
+                validUntilBlock,
+                signature
+              });
               const data = iface.encodeFunctionData("approveMilestone", [
                 escrowId,
                 milestoneIndex,
@@ -381,9 +387,9 @@ export function MilestoneActions({
                 description:
                   "Milestone approved with no gas fees using Smart Account delegation",
               });
-            } else {
               // Use regular transaction
               // Try to estimate gas first to catch potential issues
+              let gasLimit;
               try {
                 const gasEstimate = await contract.estimateGas.approveMilestone(
                   escrowId,
@@ -391,11 +397,14 @@ export function MilestoneActions({
                   validUntilBlock,
                   signature
                 );
+                // Add 30% buffer for complex Uniswap v4 hook interactions
+                gasLimit = (BigInt(gasEstimate) * 130n) / 100n;
               } catch (gasError) {
-                // Gas estimation failed, but continue with transaction
+                // Gas estimation failed, but continue with transaction and a generous default
                 console.log(
                   "Gas estimation failed, proceeding with transaction",
                 );
+                gasLimit = 600000; // Safe default for v4 interactions
               }
 
               // Add retry logic for failed transactions
@@ -404,13 +413,15 @@ export function MilestoneActions({
 
               while (retryCount < maxRetries) {
                 try {
+                  console.log(`✅ [Approve] Sending standard tx for escrow ${escrowId}, milestone ${milestoneIndex}`, { gasLimit: gasLimit.toString() });
                   txHash = await contract.send(
                     "approveMilestone",
                     "no-value",
                     escrowId,
                     milestoneIndex,
                     validUntilBlock,
-                    signature
+                    signature,
+                    { gasLimit: gasLimit.toString() }
                   );
                   break; // Success, exit retry loop
                 } catch (sendError: any) {
@@ -1022,7 +1033,7 @@ export function MilestoneActions({
       case "approve":
         return {
           title: "Approve Milestone",
-          description: `Approve milestone ${milestoneIndex + 1} and release ${(Number.parseFloat(milestone.amount) / 1e18).toFixed(2)} tokens to the beneficiary.`,
+          description: `Approve milestone ${milestoneIndex + 1} and release ${(Number.parseFloat(milestone.amount) / Math.pow(10, tokenDecimals)).toFixed(2)} tokens to the beneficiary.`,
           icon: CheckCircle2,
           confirmText: "Approve & Release",
         };
@@ -1277,7 +1288,7 @@ export function MilestoneActions({
                     try {
                       const amount = Number.parseFloat(milestone.amount);
                       if (isNaN(amount)) return "0.00";
-                      return (amount / 1e18).toFixed(2);
+                      return (amount / Math.pow(10, tokenDecimals)).toFixed(2);
                     } catch (e) {
                       return "0.00";
                     }

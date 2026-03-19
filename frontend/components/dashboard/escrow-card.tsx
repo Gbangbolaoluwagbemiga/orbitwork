@@ -282,7 +282,7 @@ export function EscrowCard({
             {(() => {
               const daysLeft = calculateDaysLeft(escrow.createdAt, escrow.duration);
               const noSubmissions = escrow.milestones.every(
-                (m) => m.status === "pending" || m.status === "not_started"
+                (m) => m.status === "pending"
               );
               const canClaimRefund =
                 escrow.isClient &&
@@ -388,6 +388,7 @@ export function EscrowCard({
                           showSubmitButton={false} // Hide submit buttons on dashboard
                           payerAddress={escrow.payer} // Client address for notifications
                           beneficiaryAddress={escrow.beneficiary} // Freelancer address for notifications
+                          tokenDecimals={escrow.tokenDecimals}
                           onSuccess={() => {
                             // Refresh the escrow data
                             window.dispatchEvent(

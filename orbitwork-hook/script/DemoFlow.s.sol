@@ -14,7 +14,7 @@ import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 
 contract DemoFlow is Script {
-    OrbitWork orbitWork = OrbitWork(payable(0x46cD4d93426C33c210Ee8D237cc238074794Ec2E));
+    OrbitWork orbitWork = OrbitWork(payable(0x62C4dd1414AB677B5766264Fa5C263A13D31d547));
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B;
     address constant SWAP_ROUTER = 0x9140a78c1A137c7fF1c151EC8231272aF78a99A4;
 
