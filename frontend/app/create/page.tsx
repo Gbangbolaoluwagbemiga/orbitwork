@@ -1508,7 +1508,10 @@ export default function CreateEscrowPage() {
               : "Your escrow has been created successfully with no gas fees! The freelancer can now start working. Redirecting...",
           });
 
-          router.replace(isOpenJob ? "/jobs" : "/dashboard");
+          // Delay redirect by 7 seconds as requested to allow for indexing
+          setTimeout(() => {
+            router.replace(isOpenJob ? "/jobs" : "/dashboard");
+          }, 7000);
         } else {
           throw new Error("Transaction failed on blockchain");
         }
@@ -1553,7 +1556,10 @@ export default function CreateEscrowPage() {
               : "Your escrow has been successfully created. Redirecting...",
           });
 
-          router.replace(isOpenJob ? "/jobs" : "/dashboard");
+          // Delay redirect by 7 seconds as requested to allow for indexing
+          setTimeout(() => {
+            router.replace(isOpenJob ? "/jobs" : "/dashboard");
+          }, 7000);
         } else {
           // Transaction failed
           throw new Error("Transaction failed on blockchain");

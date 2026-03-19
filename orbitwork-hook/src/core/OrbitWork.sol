@@ -312,7 +312,8 @@ contract OrbitWork is EscrowCore {
         s.liquidEscrowEnabled = true;
     }
     function setReactiveCallbackSender(address s) external onlyOwner {
-        reactiveCallbackSender = s;
+        OrbitWorkLib.EscrowState storage state = _getLogicState();
+        state.reactiveCallbackSender = s;
         emit ReactiveCallbackSenderUpdated(s);
     }
     function pauseJobCreation() external onlyOwner { _getLogicState().jobCreationPaused = true; emit JobCreationPaused(); }

@@ -49,6 +49,8 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         uint256 token0FeeGrowthLast; // Last recorded fee growth for token0
         uint256 token1FeeGrowthLast; // Last recorded fee growth for token1
         uint256 yieldAccumulated;    // Total yield accumulated
+        int24 tickLower;             // Lower tick of the position
+        int24 tickUpper;             // Upper tick of the position
         bool isActive;               // Whether position is active
     }
 
@@ -147,9 +149,8 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         // Initialize if new
         if (pos.liquidity == 0) {
             pos.key = key;
-            (uint256 fg0, uint256 fg1) = poolManager.getFeeGrowthGlobals(key.toId());
-            pos.token0FeeGrowthLast = fg0;
-            pos.token1FeeGrowthLast = fg1;
+            // Note: In concentrated liquidity, we should ideally initialize with feeGrowthInside
+            // but we'll handle this in onEscrowCreated where ticks are known.
         }
 
         pos.liquidity += liquidityDelta;
@@ -201,16 +202,13 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         lpAmount = (totalAmount * LP_RATIO) / 10000;
         reserveAmount = totalAmount - lpAmount;
 
+        // Fetch current fee growth to avoid historical yield
+        (uint256 fg0, uint256 fg1) = poolManager.getFeeGrowthGlobals(key.toId());
+
         // Store basic position info immediately (needed for callback)
-        escrowPositions[escrowId] = LPPosition({
-            key: key,
-            liquidity: 0, 
-            reserveAmount: reserveAmount,
-            token0FeeGrowthLast: 0,
-            token1FeeGrowthLast: 0,
-            yieldAccumulated: 0,
-            isActive: true
-        });
+        escrowPositions[escrowId].key = key;
+        escrowPositions[escrowId].reserveAmount = reserveAmount;
+        escrowPositions[escrowId].isActive = true;
 
         // Determine liquidity range and amount (Single Sided)
         (uint160 sqrtPriceX96, int24 tick, , ) = poolManager.getSlot0(key.toId());
@@ -326,6 +324,14 @@ contract EscrowHook is BaseHook, IUnlockCallback {
              })));
         }
 
+        // Capture fee growth inside the range as the baseline
+        (uint256 fgi0, uint256 fgi1) = poolManager.getFeeGrowthInside(key.toId(), tickLower, tickUpper);
+        
+        escrowPositions[escrowId].token0FeeGrowthLast = fgi0;
+        escrowPositions[escrowId].token1FeeGrowthLast = fgi1;
+        escrowPositions[escrowId].tickLower = tickLower;
+        escrowPositions[escrowId].tickUpper = tickUpper;
+
         emit LiquidityAdded(escrowId, escrowPositions[escrowId].liquidity, reserveAmount);
         
         return (lpAmount, reserveAmount);
@@ -375,22 +381,21 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         LPPosition storage pos = escrowPositions[escrowId];
         if (!pos.isActive || pos.liquidity == 0) return;
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = poolManager.getFeeGrowthGlobals(pos.key.toId());
+        (uint256 fgi0, uint256 fgi1) = poolManager.getFeeGrowthInside(pos.key.toId(), pos.tickLower, pos.tickUpper);
         
         unchecked {
-            uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
-            uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
+            uint256 delta0 = fgi0 - pos.token0FeeGrowthLast;
+            uint256 delta1 = fgi1 - pos.token1FeeGrowthLast;
             
             uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
             uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;
             
-            // Normalize to 18 decimals to avoid "apples and oranges" summing
             uint256 norm0 = _normalizeTo18(pos.key.currency0, pending0);
             uint256 norm1 = _normalizeTo18(pos.key.currency1, pending1);
             
             pos.yieldAccumulated += (norm0 + norm1);
-            pos.token0FeeGrowthLast = feeGrowthGlobal0;
-            pos.token1FeeGrowthLast = feeGrowthGlobal1;
+            pos.token0FeeGrowthLast = fgi0;
+            pos.token1FeeGrowthLast = fgi1;
         }
     }
 
@@ -417,11 +422,11 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         LPPosition storage pos = escrowPositions[escrowId];
         if (!pos.isActive || pos.liquidity == 0) return pos.yieldAccumulated;
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = poolManager.getFeeGrowthGlobals(pos.key.toId());
+        (uint256 fgi0, uint256 fgi1) = poolManager.getFeeGrowthInside(pos.key.toId(), pos.tickLower, pos.tickUpper);
         
         unchecked {
-            uint256 delta0 = feeGrowthGlobal0 - pos.token0FeeGrowthLast;
-            uint256 delta1 = feeGrowthGlobal1 - pos.token1FeeGrowthLast;
+            uint256 delta0 = fgi0 - pos.token0FeeGrowthLast;
+            uint256 delta1 = fgi1 - pos.token1FeeGrowthLast;
             
             uint256 pending0 = (delta0 * uint256(pos.liquidity)) >> 128;
             uint256 pending1 = (delta1 * uint256(pos.liquidity)) >> 128;

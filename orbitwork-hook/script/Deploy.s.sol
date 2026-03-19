@@ -11,7 +11,7 @@ import {OrbitWork} from "../src/core/OrbitWork.sol";
 import {EscrowHook} from "../src/EscrowHook.sol";
 
 /**
- * @title DeployV3
+ * @title Deploy
  * @notice 
  *  1. Deploy OrbitWork with 0% Platform Fee
  *  2. Mine CREATE2 salt for EscrowHook (pointing to new OrbitWork)
@@ -20,7 +20,7 @@ import {EscrowHook} from "../src/EscrowHook.sol";
  *  5. Whitelist MockUSDC
  *  6. Initialize Uniswap v4 Pool (ETH/MockUSDC)
  */
-contract DeployV3 is Script {
+contract Deploy is Script {
     // Unichain Sepolia Addresses
     IPoolManager constant POOL_MANAGER = IPoolManager(0x00B036B58a818B1BC34d502D3fE730Db729e62AC);
     address constant MOCK_USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B;
@@ -46,13 +46,13 @@ contract DeployV3 is Script {
         // --- 1. Deploy OrbitWork (0% Fee) ---
         // Args: _orbitworkToken, _feeCollector, _platformFeeBP
         OrbitWork orbitWork = new OrbitWork(address(0), deployer, 0);
-        console.log("OrbitWork V3 deployed at:", address(orbitWork));
+        console.log("OrbitWork deployed at:", address(orbitWork));
 
         vm.stopBroadcast();
 
         // --- 2. Mine Hook Salt ---
         bytes memory constructorArgs = abi.encode(address(POOL_MANAGER), address(orbitWork));
-        console.log("Mining hook address for OrbitWork V3...");
+        console.log("Mining hook address for OrbitWork...");
         (address hookAddress, bytes32 salt) = HookMiner.find(
             CREATE2_FACTORY,
             FLAGS,
@@ -67,7 +67,7 @@ contract DeployV3 is Script {
         // --- 3. Deploy EscrowHook ---
         EscrowHook hook = new EscrowHook{salt: salt}(POOL_MANAGER, address(orbitWork));
         require(address(hook) == hookAddress, "Hook address mismatch-remine");
-        console.log("EscrowHook V3 deployed at:", address(hook));
+        console.log("EscrowHook deployed at:", address(hook));
 
         // --- 4. Link Hook to OrbitWork ---
         orbitWork.setEscrowHook(address(hook));
@@ -96,7 +96,7 @@ contract DeployV3 is Script {
         vm.stopBroadcast();
 
         console.log("==========================================");
-        console.log("V3 DEPLOYMENT SUCCESSFUL");
+        console.log("DEPLOYMENT SUCCESSFUL");
         console.log("OrbitWork:", address(orbitWork));
         console.log("EscrowHook:", address(hook));
         console.log("==========================================");

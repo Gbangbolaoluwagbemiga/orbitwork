@@ -344,9 +344,9 @@ export function EscrowCard({
                     escrowId={escrow.id}
                     totalAmount={Number.parseFloat(escrow.totalAmount) / Math.pow(10, escrow.tokenDecimals || 18)}
                     tokenSymbol="USDC"
-                    daysActive={Math.max(0, Math.floor(
-                      (Date.now() / 1000 - escrow.createdAt) / 86400
-                    ))}
+                    daysActive={escrow.createdAt > 0 
+                      ? Math.max(0, Math.floor((Date.now() - escrow.createdAt) / 86400000))
+                      : 0}
                     tokenDecimals={escrow.tokenDecimals || 18}
                   />
                 )}

@@ -192,7 +192,8 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     }
 
     function _isArbiterForEscrow(uint256 escrowId, address arbiter) internal view returns (bool) {
-        EscrowData storage e = escrows[escrowId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[escrowId];
         for (uint256 i = 0; i < e.arbiters.length; ++i) {
             if (e.arbiters[i] == arbiter) return true;
         }
@@ -200,10 +201,11 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     }
 
     function _updateReputation(address user, uint256 points, string memory reason) internal {
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
         // Only update reputation for verified users to prevent Sybil attacks
-        if (user != address(0) && selfVerifiedUsers[user]) {
-            reputation[user] += points;
-            emit ReputationUpdated(user, reputation[user], reason);
+        if (user != address(0) && s.selfVerifiedUsers[user]) {
+            s.reputation[user] += points;
+            emit ReputationUpdated(user, s.reputation[user], reason);
         }
     }
 

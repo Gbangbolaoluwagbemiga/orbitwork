@@ -68,7 +68,7 @@ export function JobCard({
             </p>
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+              <span>Posted {job.createdAt > 0 ? new Date(job.createdAt).toLocaleDateString() : "Just now"}</span>
               <span>•</span>
               <span>
                 Budget: {(

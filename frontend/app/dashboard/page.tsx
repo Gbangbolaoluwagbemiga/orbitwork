@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingApplicationsFor, setViewingApplicationsFor] = useState<string | null>(null);
+  const [isInitialSync, setIsInitialSync] = useState(true);
 
   const getStatusFromNumber = (status: number): string => {
     switch (status) {
@@ -363,38 +364,13 @@ export default function DashboardPage() {
     escrowSummary?: any
   ) => {
     try {
-      // Get milestone count from escrow summary first
-      const milestoneCount = Number(escrowSummary[11]) || 0;
+      // Use getMilestones view function to fetch all milestones in one call
+      // This is more efficient and correctly retrieves the description string
+      const allMilestones = await contract.call("getMilestones", escrowId);
 
-      // Always try to fetch individual milestones to get accurate data
-
-      const allMilestones = [];
-
-      for (let j = 0; j < milestoneCount; j++) {
-        try {
-          const individualMilestone = await contract.call(
-            "milestones",
-            escrowId,
-            j
-          );
-
-          allMilestones.push(individualMilestone);
-        } catch (error) {
-          // Only create placeholder if we absolutely can't fetch the data
-          allMilestones.push({
-            description: `Milestone ${j + 1} - To be defined`,
-            amount: "0",
-            status: 0, // pending
-            submittedAt: 0,
-            approvedAt: 0,
-          });
-        }
-      }
-
-      if (allMilestones.length > 0) {
+      if (allMilestones && allMilestones.length > 0) {
         return allMilestones.map((m: any, index: number) => {
           try {
-            // Handle milestone data structure from getMilestones
             let description = "";
             let amount = "0";
             let status = 0;
@@ -405,99 +381,63 @@ export default function DashboardPage() {
             let rejectionReason = "";
 
             if (m && typeof m === "object") {
-              try {
-                // Check if this is a placeholder milestone
-                if (m.description && m.description.includes("To be defined")) {
-                  // This is a placeholder milestone
-                  description = m.description;
-                  amount = m.amount || "0";
-                  status = m.status || 0;
-                  submittedAt = m.submittedAt || undefined;
-                  approvedAt = m.approvedAt || undefined;
-                } else {
-                  // This is a real milestone from the contract
-                  // Handle Proxy(Result) objects properly
-                  try {
-                    // Try direct field access first (for struct fields)
-                    if (m.description !== undefined) {
-                      description = String(m.description);
-                    } else if (m[0] !== undefined) {
-                      description = String(m[0]);
-                    } else {
-                      description = `Milestone ${index + 1}`;
-                    }
+              // Handle Proxy(Result) objects from getMilestones
+              // Try direct field access first (struct fields)
+              if (m.description !== undefined) {
+                  description = String(m.description);
+              } else if (m[0] !== undefined) {
+                  description = String(m[0]);
+              } else {
+                  description = `Milestone ${index + 1}`;
+              }
 
-                    if (m.amount !== undefined) {
-                      amount = String(m.amount);
-                    } else if (m[1] !== undefined) {
-                      amount = String(m[1]);
-                    } else {
-                      amount = "0";
-                    }
+              if (m.amount !== undefined) {
+                  amount = String(m.amount);
+              } else if (m[1] !== undefined) {
+                  amount = String(m[1]);
+              } else {
+                  amount = "0";
+              }
 
-                    if (m.status !== undefined) {
-                      status = Number(m.status) || 0;
-                    } else if (m[2] !== undefined) {
-                      status = Number(m[2]) || 0;
-                    } else {
-                      status = 0;
-                    }
+              if (m.status !== undefined) {
+                  status = Number(m.status) || 0;
+              } else if (m[2] !== undefined) {
+                  status = Number(m[2]) || 0;
+              } else {
+                  status = 0;
+              }
 
-                    // Removed excessive debug logging
+              if (m.submittedAt !== undefined && Number(m.submittedAt) > 0) {
+                  submittedAt = Number(m.submittedAt) * 1000;
+              } else if (m[3] !== undefined && Number(m[3]) > 0) {
+                  submittedAt = Number(m[3]) * 1000;
+              }
 
-                    if (
-                      m.submittedAt !== undefined &&
-                      Number(m.submittedAt) > 0
-                    ) {
-                      submittedAt = Number(m.submittedAt) * 1000;
-                    } else if (m[3] !== undefined && Number(m[3]) > 0) {
-                      submittedAt = Number(m[3]) * 1000;
-                    }
+              if (m.approvedAt !== undefined && Number(m.approvedAt) > 0) {
+                  approvedAt = Number(m.approvedAt) * 1000;
+              } else if (m[4] !== undefined && Number(m[4]) > 0) {
+                  approvedAt = Number(m[4]) * 1000;
+              }
 
-                    if (
-                      m.approvedAt !== undefined &&
-                      Number(m.approvedAt) > 0
-                    ) {
-                      approvedAt = Number(m.approvedAt) * 1000;
-                    } else if (m[4] !== undefined && Number(m[4]) > 0) {
-                      approvedAt = Number(m[4]) * 1000;
-                    }
+              // Parse disputedBy (index 6 in contract)
+              if (m.disputedBy !== undefined) {
+                  disputedBy = String(m.disputedBy);
+              } else if (m[6] !== undefined) {
+                  disputedBy = String(m[6]);
+              }
 
-                    // Parse disputedBy (index 6 in contract) - for disputed: who disputed, for resolved: winner
-                    let disputedBy = "";
-                    if (m.disputedBy !== undefined) {
-                      disputedBy = String(m.disputedBy);
-                    } else if (m[6] !== undefined) {
-                      disputedBy = String(m[6]);
-                    }
+              // Parse dispute reason (index 7 in contract)
+              if (m.disputeReason !== undefined) {
+                  disputeReason = String(m.disputeReason);
+              } else if (m[7] !== undefined) {
+                  disputeReason = String(m[7]);
+              }
 
-                    // Parse dispute reason (index 7 in contract) - for disputed: dispute reason, for resolved: resolution reason
-                    if (m.disputeReason !== undefined) {
-                      disputeReason = String(m.disputeReason);
-                    } else if (m[7] !== undefined) {
-                      disputeReason = String(m[7]);
-                    }
-
-                    // Parse rejection reason (also index 7 in contract)
-                    if (m.rejectionReason !== undefined) {
-                      rejectionReason = String(m.rejectionReason);
-                    } else if (m[7] !== undefined) {
-                      rejectionReason = String(m[7]);
-                    }
-
-                    // Debug amount conversion
-                    const amountInTokens = (Number(amount) / 1e18).toFixed(2);
-                  } catch (proxyError) {
-                    // Fallback to basic parsing
-                    description = `Milestone ${index + 1}`;
-                    amount = "0";
-                    status = 0;
-                  }
-                }
-              } catch (e) {
-                description = `Milestone ${index + 1}`;
-                amount = "0";
-                status = 0;
+              // Parse rejection reason (also index 7 in contract)
+              if (m.rejectionReason !== undefined) {
+                  rejectionReason = String(m.rejectionReason);
+              } else if (m[7] !== undefined) {
+                  rejectionReason = String(m[7]);
               }
             } else {
               // Fallback for unexpected structure
@@ -621,11 +561,38 @@ export default function DashboardPage() {
   useEffect(() => {
     if (wallet.isConnected) {
       fetchUserEscrows();
+
+      // Set a timer to end the "initial sync" phase after 12 seconds
+      // This gives the indexer/RPC plenty of time to show a new escrow
+      const syncTimer = setTimeout(() => {
+        setIsInitialSync(false);
+      }, 12000);
+
+      // If no escrows found, poll a few times (helps with RPC latency after creation)
+      let pollCount = 0;
+      const maxPolls = 10;
+      const pollInterval = setInterval(() => {
+        if (escrows.length === 0 && pollCount < maxPolls) {
+          fetchUserEscrows();
+          pollCount++;
+        } else {
+          // If we found escrows, we can stop the initial sync early
+          if (escrows.length > 0) {
+            setIsInitialSync(false);
+            clearInterval(pollInterval);
+          }
+        }
+      }, 2000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(syncTimer);
+      };
     }
-  }, [wallet.isConnected]);
+  }, [wallet.isConnected, escrows.length > 0]);
 
   const fetchUserEscrows = async () => {
-    if (!isRefreshing) {
+    if (!isRefreshing && escrows.length === 0) {
       setLoading(true);
     }
     try {
@@ -1419,10 +1386,13 @@ export default function DashboardPage() {
               .reduce((sum, e) => {
                 const lpAmount = (Number.parseFloat(e.totalAmount) / 1e18) * 0.8;
                 // Ensure days is positive and reasonable (cap at 365 days)
-                const daysActive = Math.max(0, Math.min(
-                  Math.floor((Date.now() / 1000 - e.createdAt) / 86400),
-                  365
-                ));
+                // If createdAt is 0 (1970), don't show anomalous yield
+                const daysActive = e.createdAt > 0 
+                  ? Math.max(0, Math.min(
+                      Math.floor((Date.now() - e.createdAt) / 86400000),
+                      365
+                    ))
+                  : 0;
                 const yieldEarned = lpAmount * 0.001 * daysActive; // 0.1% daily estimate
                 return sum + yieldEarned;
               }, 0)}
@@ -1431,13 +1401,17 @@ export default function DashboardPage() {
         </div> */}
 
         {escrows.length === 0 ? (
-          <Card className="glass border-muted p-12 text-center">
-            <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-xl font-bold mb-2">No Escrows Found</h3>
-            <p className="text-muted-foreground">
-              You don't have any escrows yet. Create one to get started.
-            </p>
-          </Card>
+          isInitialSync ? (
+            <DashboardLoading isConnected={wallet.isConnected} />
+          ) : (
+            <Card className="glass border-muted p-12 text-center">
+              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-xl font-bold mb-2">No Escrows Found</h3>
+              <p className="text-muted-foreground">
+                You don't have any escrows yet. Create one to get started.
+              </p>
+            </Card>
+          )
         ) : (
           <>
             <FilterSortControls

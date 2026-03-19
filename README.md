@@ -15,8 +15,8 @@ We are live on **Unichain Sepolia Testnet**!
 ### Contract Addresses (Unichain Sepolia)
 | Contract | Address | Description |
 |----------|---------|-------------|
-| **OrbitWork (V3)** | `0x03f043de36e0b92b5bafa35754a84cdd7a0104ee` | Core Escrow logic with 0% upfront fees. |
-| **EscrowHook** | `0xb6941042b05c84315e877817b9bd946ea6030a40` | Uniswap v4 Hook for liquid escrow yield generation. |
+| **OrbitWork** | `0x58cc32920E25e9aaf528dc6F37996d7670d5374A` | Core Escrow logic with 0% upfront fees. |
+| **EscrowHook** | `0xc6721B7fad95Ae93e3c2ded00908a88299740a40` | Uniswap v4 Hook for liquid escrow yield generation. |
 
 ### Contract Addresses (Reactive Network - Kopli/Lasna)
 | Contract | Address | Description |
@@ -54,9 +54,10 @@ We are live on **Unichain Sepolia Testnet**!
 *   **Gas Efficiency**: Leverages Uniswap v4's singleton architecture and Unichain's low fees.
 
 ### 🤖 Autonomous Lifecycle (Reactive Network)
-*   **Decentralized Automation**: Uses Reactive Network to monitor milestone submissions on Unichain.
-*   **Auto-Approval**: Automatically triggers payment release after the dispute period expires, ensuring freelancers get paid without manual client intervention or centralized keepers.
-*   **Trustless Settlement**: The entire escrow-to-payout pipeline is autonomous, leveraging cross-chain event monitoring.
+*   **Decentralized Automation**: Orbitwork leverages the **Reactive Network** to provide an autonomous settlement layer.
+*   **The Reactive Usecase**: Our `OrbitworkReactive.sol` contract (on Kopli/Lasna) monitors Unichain Sepolia for `MilestoneSubmitted` events.
+*   **Trustless Auto-Approval**: If a milestone is not disputed within the mandatory window, Reactive automatically triggers the `autoApproveMilestone` callback on the main contract to release funds.
+*   **Zero-Maintenance**: This setup removes the need for centralized bots or "keepers", making the entire escrow-to-payout pipeline decentralized and self-driving.
 
 ---
 

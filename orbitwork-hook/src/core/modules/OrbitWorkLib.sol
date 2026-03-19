@@ -92,6 +92,7 @@ library OrbitWorkLib {
         e.isOpenJob = (beneficiary == address(0));
         e.projectTitle = projectTitle;
         e.projectDescription = projectDescription;
+        e.createdAt = block.timestamp;
 
         uint256 totalAmount = 0;
         for (uint256 i = 0; i < milestoneAmounts.length; ++i) {
