@@ -519,7 +519,7 @@ export default function FreelancerPage() {
       // Fetch ratings for completed/released escrows
       const ratings: Record<string, { rating: number; exists: boolean }> = {};
 
-      const ratingsContract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBITWORK_RATINGS_ABI);
+      const ratingsContract = getContract(CONTRACTS.ORBITWORK_RATINGS, ORBIT_WORK_ABI);
 
       if (ratingsContract) {
         for (const escrow of freelancerEscrows) {
@@ -550,11 +550,11 @@ export default function FreelancerPage() {
         // Fetch overall freelancer rating
         if (wallet.address) {
           try {
-            const avg = await ratingsContract.call("getAverageRating", wallet.address);
-            const count = await ratingsContract.call("getRatingCount", wallet.address);
+            const ratingData = await ratingsContract.call("getFreelancerRating", wallet.address);
 
-            const averageRating = Number(avg) / 100;
-            const totalRatings = Number(count);
+            // ratingData: [averageRating, totalRatings]
+            const averageRating = Number(ratingData[0]) / 100;
+            const totalRatings = Number(ratingData[1]);
             setFreelancerRating({ averageRating, totalRatings });
 
             // Calculate badge tier locally

@@ -9,7 +9,9 @@ import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "@uniswap/v4-core/src/test/PoolSwapTest.sol";
+import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 
 /**
  * @title SwapSimulation
@@ -22,9 +24,9 @@ contract SwapScript is Script {
 
     // Unichain Sepolia Addresses
     address constant POOL_MANAGER = 0x00B036B58a818B1BC34d502D3fE730Db729e62AC;
-    address constant SWAP_ROUTER = 0x1E052Af7BC256c3F0A1c37B5eDdaC663673Bf41b; // Example PoolSwapTest from deployment
+    address constant SWAP_ROUTER = 0x9140a78c1A137c7fF1c151EC8231272aF78a99A4; 
     address constant USDC = 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B;
-    address constant ESCROW_HOOK = 0xc6721b7fad95ae93e3c2ded00908a88299740a40;
+    address constant ESCROW_HOOK = 0xC6721B7fad95Ae93e3c2deD00908a88299740a40;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envOr("PRIVATE_KEY", uint256(0));
@@ -41,7 +43,7 @@ contract SwapScript is Script {
             currency1: Currency.wrap(USDC),
             fee: 3000,
             tickSpacing: 60,
-            hooks: IPoolManager(ESCROW_HOOK) // Hook address
+            hooks: IHooks(ESCROW_HOOK) // Hook address
         });
 
         console2.log("Generating yield by swapping ETH for USDC...");
@@ -55,9 +57,9 @@ contract SwapScript is Script {
         // amountSpecified = -0.1 ether (Exact input)
         // sqrtPriceLimitX96 = min if selling ETH
         
-        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+        SwapParams memory params = SwapParams({
             zeroForOne: true,
-            amountSpecified: -0.1 ether, 
+            amountSpecified: -0.01 ether, 
             sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
         });
 
@@ -67,10 +69,12 @@ contract SwapScript is Script {
         });
 
         // Execute Swap
-        try swapRouter.swap{value: 0.1 ether}(key, params, settings, "") returns (BalanceDelta delta) {
+        try swapRouter.swap{value: 0.01 ether}(key, params, settings, "") returns (BalanceDelta delta) {
             console2.log("Swap successful!");
-            console2.log("Delta0 (ETH):", int256(delta.amount0()));
-            console2.log("Delta1 (USDC):", int256(delta.amount1()));
+            console2.log("Delta0 (ETH):");
+            console2.logInt(int256(delta.amount0()));
+            console2.log("Delta1 (USDC):");
+            console2.logInt(int256(delta.amount1()));
             console2.log("-----------------------------------------");
             console2.log("Check the Dashboard now! Yield should have increased.");
         } catch Error(string memory reason) {

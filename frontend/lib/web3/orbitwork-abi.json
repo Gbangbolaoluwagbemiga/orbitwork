@@ -3,7 +3,7 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "_monadToken",
+        "name": "_orbitworkToken",
         "type": "address",
         "internalType": "address"
       },
@@ -189,12 +189,12 @@
     "name": "acceptFreelancer",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "freelancer",
+        "name": "free",
         "type": "address",
         "internalType": "address"
       }
@@ -207,17 +207,17 @@
     "name": "applyToJob",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "coverLetter",
+        "name": "cover",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "proposedTimeline",
+        "name": "tim",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -230,22 +230,22 @@
     "name": "approveMilestone",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "validUntilBlock",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -258,7 +258,7 @@
     "name": "authorizeArbiter",
     "inputs": [
       {
-        "name": "arbiter",
+        "name": "a",
         "type": "address",
         "internalType": "address"
       }
@@ -271,7 +271,7 @@
     "name": "authorizedArbiters",
     "inputs": [
       {
-        "name": "",
+        "name": "arbiter",
         "type": "address",
         "internalType": "address"
       }
@@ -287,10 +287,28 @@
   },
   {
     "type": "function",
+    "name": "autoApproveMilestone",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "idx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "blacklistToken",
     "inputs": [
       {
-        "name": "token",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       }
@@ -327,7 +345,7 @@
     "name": "completedEscrows",
     "inputs": [
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
@@ -346,47 +364,47 @@
     "name": "createEscrow",
     "inputs": [
       {
-        "name": "beneficiary",
+        "name": "ben",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "arbiters",
+        "name": "arbs",
         "type": "address[]",
         "internalType": "address[]"
       },
       {
-        "name": "requiredConfirmations",
+        "name": "req",
         "type": "uint8",
         "internalType": "uint8"
       },
       {
-        "name": "milestoneAmounts",
+        "name": "mAmts",
         "type": "uint256[]",
         "internalType": "uint256[]"
       },
       {
-        "name": "milestoneDescriptions",
+        "name": "mDescs",
         "type": "string[]",
         "internalType": "string[]"
       },
       {
-        "name": "token",
+        "name": "tok",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "duration",
+        "name": "dur",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "projectTitle",
+        "name": "pT",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "projectDescription",
+        "name": "pD",
         "type": "string",
         "internalType": "string"
       }
@@ -405,42 +423,42 @@
     "name": "createEscrowNative",
     "inputs": [
       {
-        "name": "beneficiary",
+        "name": "ben",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "arbiters",
+        "name": "arbs",
         "type": "address[]",
         "internalType": "address[]"
       },
       {
-        "name": "requiredConfirmations",
+        "name": "req",
         "type": "uint8",
         "internalType": "uint8"
       },
       {
-        "name": "milestoneAmounts",
+        "name": "mAmts",
         "type": "uint256[]",
         "internalType": "uint256[]"
       },
       {
-        "name": "milestoneDescriptions",
+        "name": "mDescs",
         "type": "string[]",
         "internalType": "string[]"
       },
       {
-        "name": "duration",
+        "name": "dur",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "projectTitle",
+        "name": "pT",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "projectDescription",
+        "name": "pD",
         "type": "string",
         "internalType": "string"
       }
@@ -459,19 +477,32 @@
     "name": "disputeMilestone",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "reason",
+        "name": "r",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "emergencyRefundAfterDeadline",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -482,12 +513,12 @@
     "name": "emergencyWithdraw",
     "inputs": [
       {
-        "name": "token",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "amount",
+        "name": "amt",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -513,36 +544,43 @@
     "name": "escrowPoolKeys",
     "inputs": [
       {
-        "name": "",
+        "name": "id",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "currency0",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "currency1",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "fee",
-        "type": "uint24",
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickSpacing",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "hooks",
-        "type": "address",
-        "internalType": "address"
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IEscrowHook.PoolKey",
+        "components": [
+          {
+            "name": "currency0",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "currency1",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "fee",
+            "type": "uint24",
+            "internalType": "uint24"
+          },
+          {
+            "name": "tickSpacing",
+            "type": "int24",
+            "internalType": "int24"
+          },
+          {
+            "name": "hooks",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -552,31 +590,38 @@
     "name": "escrowPoolParams",
     "inputs": [
       {
-        "name": "",
+        "name": "id",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "tickLower",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "liquidityDelta",
-        "type": "int256",
-        "internalType": "int256"
-      },
-      {
-        "name": "salt",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IEscrowHook.ModifyLiquidityParams",
+        "components": [
+          {
+            "name": "tickLower",
+            "type": "int24",
+            "internalType": "int24"
+          },
+          {
+            "name": "tickUpper",
+            "type": "int24",
+            "internalType": "int24"
+          },
+          {
+            "name": "liquidityDelta",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "salt",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -586,7 +631,7 @@
     "name": "escrowedAmount",
     "inputs": [
       {
-        "name": "",
+        "name": "token",
         "type": "address",
         "internalType": "address"
       }
@@ -605,89 +650,119 @@
     "name": "escrows",
     "inputs": [
       {
-        "name": "",
+        "name": "id",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "depositor",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "beneficiary",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "requiredConfirmations",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "totalAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "paidAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "platformFee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "status",
-        "type": "uint8",
-        "internalType": "enum IOrbitWork.EscrowStatus"
-      },
-      {
-        "name": "workStarted",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "createdAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "milestoneCount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "isOpenJob",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "projectTitle",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "projectDescription",
-        "type": "string",
-        "internalType": "string"
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IOrbitWork.EscrowData",
+        "components": [
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "beneficiary",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "arbiters",
+            "type": "address[]",
+            "internalType": "address[]"
+          },
+          {
+            "name": "requiredConfirmations",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "totalAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paidAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "platformFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum IOrbitWork.EscrowStatus"
+          },
+          {
+            "name": "workStarted",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "createdAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "milestoneCount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isOpenJob",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "projectTitle",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "projectDescription",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "extendDeadline",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "ext",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -707,7 +782,7 @@
     "name": "getApplicationCount",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -726,17 +801,17 @@
     "name": "getApplicationsPage",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "offset",
+        "name": "off",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "limit",
+        "name": "lim",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -789,10 +864,10 @@
   },
   {
     "type": "function",
-    "name": "getCompletedEscrows",
+    "name": "getBadgeTier",
     "inputs": [
       {
-        "name": "user",
+        "name": "f",
         "type": "address",
         "internalType": "address"
       }
@@ -808,89 +883,171 @@
   },
   {
     "type": "function",
-    "name": "getEscrowSummary",
+    "name": "getCompletedEscrows",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "u",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getEscrowRating",
+    "inputs": [
+      {
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "depositor",
+        "name": "ra",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "beneficiary",
+        "name": "fr",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "arbiters",
+        "name": "r",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "t",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "ex",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getEscrowSummary",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "dep",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ben",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "arbs",
         "type": "address[]",
         "internalType": "address[]"
       },
       {
-        "name": "status",
+        "name": "st",
         "type": "uint8",
         "internalType": "enum IOrbitWork.EscrowStatus"
       },
       {
-        "name": "totalAmount",
+        "name": "tot",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "paidAmount",
+        "name": "paid",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "remaining",
+        "name": "rem",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "token",
+        "name": "tok",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "deadline",
+        "name": "dead",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "workStarted",
+        "name": "work",
         "type": "bool",
         "internalType": "bool"
       },
       {
-        "name": "createdAt",
+        "name": "cre",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneCount",
+        "name": "count",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "isOpenJob",
+        "name": "open",
         "type": "bool",
         "internalType": "bool"
       },
       {
-        "name": "projectTitle",
+        "name": "pT",
         "type": "string",
         "internalType": "string"
       },
       {
-        "name": "projectDescription",
+        "name": "pD",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getFreelancerRating",
+    "inputs": [
+      {
+        "name": "f",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "a",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "t",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -900,7 +1057,7 @@
     "name": "getMilestones",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -961,7 +1118,7 @@
     "name": "getReputation",
     "inputs": [
       {
-        "name": "user",
+        "name": "u",
         "type": "address",
         "internalType": "address"
       }
@@ -980,7 +1137,7 @@
     "name": "getUserEscrows",
     "inputs": [
       {
-        "name": "user",
+        "name": "u",
         "type": "address",
         "internalType": "address"
       }
@@ -999,7 +1156,7 @@
     "name": "getWithdrawableFees",
     "inputs": [
       {
-        "name": "token",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       }
@@ -1018,12 +1175,12 @@
     "name": "hasApplied",
     "inputs": [
       {
-        "name": "",
+        "name": "id",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
@@ -1042,12 +1199,12 @@
     "name": "hasUserApplied",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "user",
+        "name": "u",
         "type": "address",
         "internalType": "address"
       }
@@ -1116,69 +1273,63 @@
     "name": "milestones",
     "inputs": [
       {
-        "name": "",
+        "name": "id",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "description",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "status",
-        "type": "uint8",
-        "internalType": "enum IOrbitWork.MilestoneStatus"
-      },
-      {
-        "name": "submittedAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "approvedAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "disputedAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "disputedBy",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "disputeReason",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "monadToken",
-    "inputs": [],
-    "outputs": [
-      {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "tuple",
+        "internalType": "struct IOrbitWork.Milestone",
+        "components": [
+          {
+            "name": "description",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum IOrbitWork.MilestoneStatus"
+          },
+          {
+            "name": "submittedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "approvedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "disputedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "disputedBy",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "disputeReason",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -1198,7 +1349,7 @@
   },
   {
     "type": "function",
-    "name": "owner",
+    "name": "orbitworkToken",
     "inputs": [],
     "outputs": [
       {
@@ -1211,10 +1362,16 @@
   },
   {
     "type": "function",
-    "name": "pause",
+    "name": "owner",
     "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1251,20 +1408,77 @@
   },
   {
     "type": "function",
+    "name": "raiseDeadlineDispute",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "rateFreelancer",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "r",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reactiveCallbackSender",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refundEscrow",
+    "inputs": [
+      {
+        "name": "eId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "rejectMilestone",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "reason",
+        "name": "r",
         "type": "string",
         "internalType": "string"
       }
@@ -1284,7 +1498,7 @@
     "name": "reputation",
     "inputs": [
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
@@ -1303,22 +1517,22 @@
     "name": "resolveDispute",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "beneficiaryAmount",
+        "name": "bAmt",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "resolutionReason",
+        "name": "resReason",
         "type": "string",
         "internalType": "string"
       }
@@ -1331,17 +1545,17 @@
     "name": "resubmitMilestone",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "description",
+        "name": "d",
         "type": "string",
         "internalType": "string"
       }
@@ -1354,7 +1568,7 @@
     "name": "revokeArbiter",
     "inputs": [
       {
-        "name": "arbiter",
+        "name": "a",
         "type": "address",
         "internalType": "address"
       }
@@ -1367,7 +1581,7 @@
     "name": "revokeUserVerification",
     "inputs": [
       {
-        "name": "user",
+        "name": "u",
         "type": "address",
         "internalType": "address"
       }
@@ -1380,7 +1594,7 @@
     "name": "selfVerifiedUsers",
     "inputs": [
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
@@ -1399,7 +1613,7 @@
     "name": "setEscrowHook",
     "inputs": [
       {
-        "name": "_hook",
+        "name": "h",
         "type": "address",
         "internalType": "address"
       }
@@ -1409,25 +1623,12 @@
   },
   {
     "type": "function",
-    "name": "setFeeCollector",
+    "name": "setReactiveCallbackSender",
     "inputs": [
       {
-        "name": "_collector",
+        "name": "s",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setPlatformFeeBP",
-    "inputs": [
-      {
-        "name": "_bp",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -1438,7 +1639,7 @@
     "name": "startWork",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1451,17 +1652,17 @@
     "name": "submitMilestone",
     "inputs": [
       {
-        "name": "escrowId",
+        "name": "eId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "milestoneIndex",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "description",
+        "name": "desc",
         "type": "string",
         "internalType": "string"
       }
@@ -1474,7 +1675,7 @@
     "name": "totalFeesByToken",
     "inputs": [
       {
-        "name": "",
+        "name": "token",
         "type": "address",
         "internalType": "address"
       }
@@ -1503,13 +1704,6 @@
   },
   {
     "type": "function",
-    "name": "unpause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "unpauseJobCreation",
     "inputs": [],
     "outputs": [],
@@ -1520,12 +1714,12 @@
     "name": "userEscrows",
     "inputs": [
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "",
+        "name": "idx",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1544,7 +1738,7 @@
     "name": "verificationTimestamp",
     "inputs": [
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
@@ -1563,7 +1757,7 @@
     "name": "verifyUserIdentity",
     "inputs": [
       {
-        "name": "user",
+        "name": "u",
         "type": "address",
         "internalType": "address"
       }
@@ -1576,7 +1770,7 @@
     "name": "whitelistToken",
     "inputs": [
       {
-        "name": "token",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       }
@@ -1589,7 +1783,7 @@
     "name": "whitelistedTokens",
     "inputs": [
       {
-        "name": "",
+        "name": "token",
         "type": "address",
         "internalType": "address"
       }
@@ -1608,7 +1802,7 @@
     "name": "withdrawFees",
     "inputs": [
       {
-        "name": "token",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       }
@@ -2222,6 +2416,19 @@
   },
   {
     "type": "event",
+    "name": "ReactiveCallbackSenderUpdated",
+    "inputs": [
+      {
+        "name": "newSender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "ReputationUpdated",
     "inputs": [
       {
@@ -2330,39 +2537,12 @@
   },
   {
     "type": "error",
-    "name": "AddressEmptyCode",
-    "inputs": [
-      {
-        "name": "target",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "AddressInsufficientBalance",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "EnforcedPause",
     "inputs": []
   },
   {
     "type": "error",
     "name": "ExpectedPause",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "FailedInnerCall",
     "inputs": []
   },
   {
@@ -2402,69 +2582,5 @@
         "internalType": "address"
       }
     ]
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "eId",
-        "type": "uint256"
-      }
-    ],
-    "name": "refundEscrow",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "eId",
-        "type": "uint256"
-      }
-    ],
-    "name": "emergencyRefundAfterDeadline",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "escrowId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "depositor",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "FundsRefunded",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "eId",
-        "type": "uint256"
-      }
-    ],
-    "name": "raiseDeadlineDispute",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   }
 ]
