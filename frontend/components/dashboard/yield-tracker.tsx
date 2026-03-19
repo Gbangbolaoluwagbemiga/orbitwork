@@ -26,6 +26,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
         yieldAccumulated: 0,
         projectedYield: 0,
         isActive: false,
+        isReal: false,
     });
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -56,10 +57,16 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                 // Estimate projected yield at a realistic Uniswap v4 LP APR (~0.05%/day = ~18% APR)
                 // so the demo shows design intent. Real yield always overrides.
                 const DAILY_LP_RATE = 0.0005; // 0.05% per day (conservative Uniswap v4 LP estimate)
-                const estimatedYield = currentYield > 0
+                
+                // CRITICAL: If real yield > 0, we use it! 
+                // We only use estimation if real yield is exactly 0.
+                const useRealYield = currentYield > 0;
+                
+                const estimatedYield = useRealYield
                     ? currentYield
                     : lpAmount * DAILY_LP_RATE * Math.max(daysActive, 1);
-                const projectedYield = currentYield > 0
+                
+                const projectedYield = useRealYield
                     ? currentYield * 21
                     : lpAmount * DAILY_LP_RATE * 30; // 30-day projection
 
@@ -70,6 +77,7 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                         yieldAccumulated: estimatedYield,
                         projectedYield,
                         isActive: true,
+                        isReal: useRealYield,
                     });
                 }
             } catch (error) {
@@ -102,13 +110,13 @@ export function YieldTracker({ escrowId, totalAmount, tokenSymbol, daysActive, t
                         <CardTitle className="text-base flex items-center gap-2">
                             <Droplet className="h-4 w-4 text-emerald-500" />
                             Productive Capital
-                            <Badge variant="outline" className="ml-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] h-5 px-1.5">
+                            <Badge variant="outline" className={`ml-2 ${yieldData.isReal ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"} text-[10px] h-5 px-1.5`}>
                                 <Sparkles className="h-2 w-2 mr-1" />
-                                Active
+                                {yieldData.isReal ? "Blockchain Verified" : "Active"}
                             </Badge>
                         </CardTitle>
                         <CardDescription className="text-xs mt-1">
-                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}`}
+                            {isExpanded ? "Your funds are earning yield in Uniswap V4" : `Earning swap fees: +${yieldData.yieldAccumulated.toFixed(6)} ${tokenSymbol}${yieldData.isReal ? " (Live)" : " (Est.)"}`}
                         </CardDescription>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

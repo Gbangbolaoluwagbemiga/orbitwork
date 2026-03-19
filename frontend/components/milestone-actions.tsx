@@ -483,17 +483,8 @@ export function MilestoneActions({
                   }),
                 );
 
-                // Call onSuccess to refresh data first
+                // Call onSuccess to refresh data (triggers escrowUpdated event in EscrowCard)
                 onSuccess();
-
-                // Wait a bit more for data to refresh, then reload page
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
               } else {
                 throw new Error("Transaction failed on blockchain");
               }
@@ -522,11 +513,8 @@ export function MilestoneActions({
                 // Call onSuccess to refresh data first
                 onSuccess();
 
-                // Wait a bit more for data to refresh, then reload page
+                 // State synced
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
                 return;
               }
 
@@ -670,12 +658,6 @@ export function MilestoneActions({
 
                 setDialogOpen(false);
                 onSuccess();
-
-                // Wait a bit for data to refresh, then reload page
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
               } else {
                 throw new Error("Transaction failed on blockchain");
               }
@@ -688,12 +670,6 @@ export function MilestoneActions({
                 });
                 setDialogOpen(false);
                 onSuccess();
-
-                // Wait a bit for data to refresh, then reload page
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
                 return;
               }
               throw new Error("Transaction failed to confirm on blockchain");
@@ -921,11 +897,8 @@ export function MilestoneActions({
                 // Call onSuccess to refresh data first
                 onSuccess();
 
-                // Wait a bit more for data to refresh, then reload page
+                // Wait a bit more for data to refresh
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
               } else {
                 throw new Error("Transaction failed on blockchain");
               }
@@ -955,11 +928,8 @@ export function MilestoneActions({
                 // Call onSuccess to refresh data first
                 onSuccess();
 
-                // Wait a bit more for data to refresh, then reload page
+                // Wait a bit more for state sync
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                // Reload the page to reflect the updated state
-                window.location.reload();
                 return;
               }
 

@@ -318,4 +318,30 @@ contract OrbitWork is EscrowCore {
     }
     function pauseJobCreation() external onlyOwner { _getLogicState().jobCreationPaused = true; emit JobCreationPaused(); }
     function unpauseJobCreation() external onlyOwner { _getLogicState().jobCreationPaused = false; emit JobCreationUnpaused(); }
+
+    /**
+     * @notice Manually initialize an escrow in the hook (Admin ONLY)
+     * Useful for fixing escrows created before hook was active or during migrations.
+     */
+    function fixEscrowInHook(uint256 eId) external onlyOwner {
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        IOrbitWork.EscrowData storage e = s.escrows[eId];
+        require(e.totalAmount > 0, "no escrow");
+        
+        IEscrowHook.PoolKey memory key = IEscrowHook.PoolKey({
+            currency0: address(0),
+            currency1: (e.token == address(0)) ? 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B : e.token,
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: address(s.escrowHook)
+        });
+        
+        s.escrowPoolKeys[eId] = key;
+        
+        if (e.token != address(0)) {
+            IERC20(e.token).approve(address(s.escrowHook), e.totalAmount + e.platformFee);
+        }
+        
+        s.escrowHook.onEscrowCreated(eId, e.totalAmount + e.platformFee, key);
+    }
 }

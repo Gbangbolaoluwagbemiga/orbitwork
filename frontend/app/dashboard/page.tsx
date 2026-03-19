@@ -591,6 +591,21 @@ export default function DashboardPage() {
     }
   }, [wallet.isConnected, escrows.length > 0]);
 
+  useEffect(() => {
+    const handleEscrowUpdate = () => {
+      console.log("🔄 [Dashboard] Escrow update detected, refreshing...");
+      fetchUserEscrows();
+    };
+
+    window.addEventListener("escrowUpdated", handleEscrowUpdate);
+    window.addEventListener("milestoneApproved", handleEscrowUpdate);
+    
+    return () => {
+      window.removeEventListener("escrowUpdated", handleEscrowUpdate);
+      window.removeEventListener("milestoneApproved", handleEscrowUpdate);
+    };
+  }, []);
+
   const fetchUserEscrows = async () => {
     if (!isRefreshing && escrows.length === 0) {
       setLoading(true);
@@ -1195,12 +1210,7 @@ export default function DashboardPage() {
         await fetchUserEscrows();
 
         // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent("milestoneApproved"));
-
-        // Reload the page to ensure UI is fully updated
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        window.dispatchEvent(new CustomEvent("escrowUpdated"));
       } else {
         throw new Error("Transaction failed on blockchain");
       }
@@ -1283,11 +1293,9 @@ export default function DashboardPage() {
           description: "The freelancer has been notified and can resubmit",
         });
         await fetchUserEscrows();
-
-        // Reload the page to ensure UI is fully updated
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        
+        // Dispatch event
+        window.dispatchEvent(new CustomEvent("escrowUpdated"));
       } else {
         throw new Error("Transaction failed on blockchain");
       }

@@ -132,6 +132,41 @@ library OrbitWorkLib {
             s.userEscrows[beneficiary].push(id);
         }
         s.userEscrows[depositor].push(id);
+
+        // --- Liquid Escrow Integration ---
+        if (s.liquidEscrowEnabled && address(s.escrowHook) != address(0)) {
+            // For hackathon: Construct default PoolKey (ETH/USDC 0.3%)
+            // In production, this would be passed or discovered.
+            IEscrowHook.PoolKey memory key = IEscrowHook.PoolKey({
+                currency0: address(0), 
+                currency1: token == address(0) ? 0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B : token, // Default to USDC if native
+                fee: 3000,
+                tickSpacing: 60,
+                hooks: address(s.escrowHook)
+            });
+            
+            // If the token is actually Currency1 in our pool, swap them
+            if (token != address(0) && token < address(0)) {
+                // Should not happen with address(0)
+            }
+
+            s.escrowPoolKeys[id] = key;
+            
+            // --- NEW: Approve hook to pull tokens ---
+            if (token != address(0)) {
+                IERC20(token).approve(address(s.escrowHook), totalAmount + e.platformFee);
+            }
+
+            // Perform the "onEscrowCreated" call which moves funds
+            // Note: OrbitWork must have moved funds from depositor to itself already (done above)
+            // Now we call hook which pulls balance from OrbitWork
+            try s.escrowHook.onEscrowCreated(id, totalAmount + e.platformFee, key) returns (uint256 lp, uint256 res) {
+                // Success: record or emit
+            } catch (bytes memory reason) {
+                // Fallback: Continue without liquid escrow if hook fails
+                // console2.log("Hook call failed");
+            }
+        }
     }
 
     function handleApproval(
@@ -156,11 +191,13 @@ library OrbitWorkLib {
         totalPayment = amount;
         if (s.liquidEscrowEnabled && address(s.escrowHook) != address(0)) {
             IEscrowHook.PoolKey memory key = s.escrowPoolKeys[escrowId];
-            if (key.currency0 != address(0) || key.currency1 != address(0)) {
+            if (key.fee != 0) { // Check if key was set
                 try s.escrowHook.onMilestoneApproved(escrowId, amount, e.beneficiary) returns (uint256 paymentWithYield, uint256 yield) {
                     totalPayment = paymentWithYield;
                     platformYield = yield;
-                } catch {}
+                } catch {
+                    // Fallback to base amount if hook fails
+                }
             }
         }
 
