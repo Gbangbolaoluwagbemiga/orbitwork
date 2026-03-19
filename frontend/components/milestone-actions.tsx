@@ -328,34 +328,36 @@ export function MilestoneActions({
 
                 validUntilBlock = Number(currentBlock) + 600; // Valid for 600 blocks (~50 mins)
 
-                // 2. Check if user is registered
-                const erContract = getContract(ENGAGEMENT_REWARDS_ADDRESS, ENGAGEMENT_REWARDS_ABI);
+                // 2. Check if user is registered - ONLY ON CELO MAINNET
+                if (wallet.chainId === 42220) {
+                  const erContract = getContract(ENGAGEMENT_REWARDS_ADDRESS, ENGAGEMENT_REWARDS_ABI);
 
-                if (erContract) {
-                  const result = await erContract.call(
-                    "userRegistrations",
-                    CONTRACTS.ORBIT_WORK_ESCROW,
-                    wallet.address
-                  );
+                  if (erContract) {
+                    const result = await erContract.call(
+                      "userRegistrations",
+                      CONTRACTS.ORBIT_WORK_ESCROW,
+                      wallet.address
+                    );
 
-                  // Result is [isRegistered, lastClaimTimestamp]
-                  const isRegisteredInt = result[0];
+                    // Result is [isRegistered, lastClaimTimestamp]
+                    const isRegisteredInt = result[0];
 
-                  if (Number(isRegisteredInt) === 0) {
-                    toast({
-                      title: "One-time Setup",
-                      description:
-                        "Please sign to register for Engagement Rewards...",
-                    });
+                    if (Number(isRegisteredInt) === 0) {
+                      toast({
+                        title: "One-time Setup",
+                        description:
+                          "Please sign to register for Engagement Rewards...",
+                      });
 
-                    // 3. Generate signature for first-time users
-                    // if (engagementRewards) {
-                    //   signature = await engagementRewards.signClaim(
-                    //     CONTRACTS.ORBIT_WORK_ESCROW as `0x${string}`,
-                    //     "0x0000000000000000000000000000000000000000", // No inviter
-                    //     BigInt(validUntilBlock)
-                    //   );
-                    // }
+                      // 3. Generate signature for first-time users
+                      // if (engagementRewards) {
+                      //   signature = await engagementRewards.signClaim(
+                      //     CONTRACTS.ORBIT_WORK_ESCROW as `0x${string}`,
+                      //     "0x0000000000000000000000000000000000000000", // No inviter
+                      //     BigInt(validUntilBlock)
+                      //   );
+                      // }
+                    }
                   }
                 }
               } catch (err) {
@@ -387,6 +389,7 @@ export function MilestoneActions({
                 description:
                   "Milestone approved with no gas fees using Smart Account delegation",
               });
+            } else {
               // Use regular transaction
               // Try to estimate gas first to catch potential issues
               let gasLimit;
@@ -398,7 +401,7 @@ export function MilestoneActions({
                   signature
                 );
                 // Add 30% buffer for complex Uniswap v4 hook interactions
-                gasLimit = (BigInt(gasEstimate) * 130n) / 100n;
+                gasLimit = (BigInt(gasEstimate.toString()) * 130n) / 100n;
               } catch (gasError) {
                 // Gas estimation failed, but continue with transaction and a generous default
                 console.log(
@@ -417,10 +420,10 @@ export function MilestoneActions({
                   txHash = await contract.send(
                     "approveMilestone",
                     "no-value",
-                    escrowId,
-                    milestoneIndex,
-                    validUntilBlock,
-                    signature,
+                    BigInt(escrowId.toString()),
+                    BigInt(milestoneIndex),
+                    BigInt(validUntilBlock),
+                    signature as `0x${string}`,
                     { gasLimit: gasLimit.toString() }
                   );
                   break; // Success, exit retry loop

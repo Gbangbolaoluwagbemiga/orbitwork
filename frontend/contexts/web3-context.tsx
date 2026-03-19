@@ -760,8 +760,22 @@ export function Web3Provider({ children }: { children: ReactNode }) {
               `Network validation failed. Please ensure you're connected to Unichain Sepolia (Chain ID: 42220).`
             );
           }
+          // Handle potential options object as the last argument
+          let options: any = {};
+          let encodedArgs = args;
 
-          const data = encodeFunction(abi, method, args);
+          if (
+            args.length > 0 &&
+            typeof args[args.length - 1] === "object" &&
+            args[args.length - 1] !== null &&
+            !Array.isArray(args[args.length - 1]) &&
+            (args[args.length - 1].gasLimit || args[args.length - 1].gasPrice)
+          ) {
+            options = args[args.length - 1];
+            encodedArgs = args.slice(0, -1);
+          }
+
+          const data = encodeFunction(abi, method, encodedArgs);
 
           // Estimate gas for the transaction with optimized limits
           let gasLimit = "0x80000"; // Reduced default fallback (524,288 gas)
@@ -771,18 +785,24 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             gasLimit = "0xc350"; // 50,000 gas - force higher limit for ERC20 approve
           } else {
             try {
-              const estimatedGas = await provider.request({
-                method: "eth_estimateGas",
-                params: [
-                  {
-                    from: walletRef.current.address ? ethers.getAddress(walletRef.current.address) : null,
-                    to: ethers.getAddress(targetAddress),
-                    data,
-                    value:
-                      value !== "0x0" && value !== "no-value" ? value : "0x0",
-                  },
-                ],
-              });
+              // Use gas limit from options if provided, otherwise estimate
+              let estimatedGas;
+              if (options.gasLimit) {
+                estimatedGas = options.gasLimit;
+              } else {
+                estimatedGas = await provider.request({
+                  method: "eth_estimateGas",
+                  params: [
+                    {
+                      from: walletRef.current.address ? ethers.getAddress(walletRef.current.address) : null,
+                      to: ethers.getAddress(targetAddress),
+                      data,
+                      value:
+                        value !== "0x0" && value !== "no-value" ? value : "0x0",
+                    },
+                  ],
+                });
+              }
               // Add only 10% buffer to estimated gas (reduced from 20%)
               const gasWithBuffer = Math.floor(Number(estimatedGas) * 1.1);
               gasLimit = `0x${gasWithBuffer.toString(16)}`;
@@ -849,8 +869,11 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       const encodedData = iface.encodeFunctionData(method, args);
 
       return encodedData;
-    } catch (error) {
-      // Fallback to basic encoding for common functions
+    } catch (error: any) {
+      console.error(`ABI Encoding failed for ${method}:`, error.message || error);
+      console.log("Arguments passed to encoder:", args);
+
+      // Fallback to basic encoding for common functions if iface fails
       if (method === "approve") {
         // approve(address,uint256) selector
         return (
@@ -859,8 +882,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             2
           )
         );
+      } else if (method === "approveMilestone") {
+        // approveMilestone(uint256,uint256,uint256,bytes)
+        // Manual construction as a last resort is risky, better to throw and fix the caller
+        throw new Error(`Critical ABI encoding error for ${method}: ${error.message}`);
       } else if (method === "createEscrow") {
-        // createEscrow function selector (this needs to be calculated from the actual function signature)
+        // createEscrow function selector
         return (
           "0x" +
           "12345678" +
@@ -868,18 +895,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             8
           )
         );
-      } else if (method === "createEscrowNative") {
-        // createEscrowNative function selector
-        return (
-          "0x" +
-          "87654321" +
-          "0000000000000000000000000000000000000000000000000000000000000000".repeat(
-            7
-          )
-        );
       }
 
-      return "0x";
+      // If we don't have a reliable fallback, THROW. Returning "0x" is dangerous.
+      throw new Error(`Failed to encode function ${method}: ${error.message}`);
     }
   };
 

@@ -29,7 +29,7 @@ const UNICHAIN_SEPOLIA_CONFIG = {
   RPC_URL: "https://sepolia.unichain.org",
   CHAIN_ID: 1301,
   // Definitive addresses from latest deployment (Fixed insolvency and Uniswap robustness)
-  HOOK_ADDRESS: "0x637696BE3514c4d65Ee6558e491eaa49EfbC4a40",
+  HOOK_ADDRESS: "0x16d67690836dded42ab158d5a6bc00d944f84a40",
   USDC_ADDRESS: "0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B",
   MOCK_ERC20: "0x8f22D60F408DBA32ba2D4123aD0aE6D3c0b1d28B",
   POOL_MANAGER: "0x00B036B58a818B1BC34d502D3fE730Db729e62AC",

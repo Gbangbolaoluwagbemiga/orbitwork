@@ -365,8 +365,13 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         uint256 freelancerYield = (yieldEarned * FREELANCER_SHARE) / 10000;
         platformYield = yieldEarned - freelancerYield;
 
-        // Total payment to freelancer = milestone + yield bonus
-        payment = milestoneAmount + freelancerYield;
+        // Denormalize yield from 18 decimals to token native decimals
+        Currency tokenCurrency = position.key.currency0.isAddressZero() ? position.key.currency1 : position.key.currency0;
+        uint256 denormFreelancerYield = _denormalizeFrom18(tokenCurrency, freelancerYield);
+        platformYield = _denormalizeFrom18(tokenCurrency, platformYield);
+
+        // Total payment to freelancer = milestone + yield bonus (now with matching decimals)
+        payment = milestoneAmount + denormFreelancerYield;
 
         // 3. CRITICAL: Withdraw milestone funds from Uniswap back to OrbitWork
         // Since OrbitWork only kept 20% reserve, we must return the 80% portion
@@ -454,6 +459,22 @@ contract EscrowHook is BaseHook, IUnlockCallback {
         if (decimals == 18) return amount;
         if (decimals < 18) return amount * (10 ** (18 - decimals));
         return amount / (10 ** (decimals - 18));
+    }
+
+    function _denormalizeFrom18(Currency currency, uint256 amount) internal view returns (uint256) {
+        if (amount == 0) return 0;
+        if (currency.isAddressZero()) return amount; // ETH is already 18
+        
+        uint8 decimals = 18;
+        try IERC20Metadata(Currency.unwrap(currency)).decimals() returns (uint8 d) {
+            decimals = d;
+        } catch {
+            // Fallback to 18 if call fails
+        }
+        
+        if (decimals == 18) return amount;
+        if (decimals < 18) return amount / (10 ** (18 - decimals));
+        return amount * (10 ** (decimals - 18));
     }
 
     /**
