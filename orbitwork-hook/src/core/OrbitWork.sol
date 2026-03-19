@@ -47,17 +47,19 @@ contract OrbitWork is EscrowCore {
 
     // ===== Work Lifecycle =====
     function startWork(uint256 eId) external override validEscrow(eId) onlyBeneficiary(eId) whenNotPaused {
-        EscrowData storage e = escrows[eId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
         require(e.status == EscrowStatus.Pending && !e.workStarted, "state");
         e.workStarted = true;
         e.status = EscrowStatus.InProgress;
-        if (e.platformFee > 0) totalFeesByToken[e.token] += e.platformFee;
+        if (e.platformFee > 0) s.totalFeesByToken[e.token] += e.platformFee;
         emit WorkStarted(eId, msg.sender, block.timestamp);
         emit EscrowUpdated(eId, EscrowStatus.InProgress, block.timestamp);
     }
 
     function submitMilestone(uint256 eId, uint256 idx, string calldata desc) external override validEscrow(eId) onlyBeneficiary(eId) whenNotPaused {
-        Milestone storage m = milestones[eId][idx];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        Milestone storage m = s.milestones[eId][idx];
         require(m.status == MilestoneStatus.NotStarted, "state");
         m.status = MilestoneStatus.Submitted;
         m.submittedAt = block.timestamp;
@@ -70,19 +72,20 @@ contract OrbitWork is EscrowCore {
     }
 
     function autoApproveMilestone(uint256 eId, uint256 idx) external override validEscrow(eId) whenNotPaused nonReentrant {
-        require(msg.sender == reactiveCallbackSender, "auth");
-        Milestone storage m = milestones[eId][idx];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        require(msg.sender == s.reactiveCallbackSender, "auth");
+        Milestone storage m = s.milestones[eId][idx];
         require(block.timestamp > m.submittedAt + DISPUTE_PERIOD, "delay");
         _approveInternal(eId, idx);
     }
 
     function _approveInternal(uint256 eId, uint256 idx) internal {
         OrbitWorkLib.EscrowState storage s = _getLogicState();
-        EscrowData storage e = escrows[eId];
-        uint256 baseAmt = milestones[eId][idx].amount;
+        EscrowData storage e = s.escrows[eId];
+        uint256 baseAmt = s.milestones[eId][idx].amount;
         (uint256 pay, uint256 yield) = OrbitWorkLib.handleApproval(s, eId, idx, MIN_REP_ELIGIBLE_ESCROW_VALUE, REPUTATION_PER_MILESTONE, REPUTATION_PER_ESCROW);
         _transferOut(e.token, e.beneficiary, pay);
-        if (yield > 0) _transferOut(e.token, feeCollector, yield);
+        if (yield > 0) _transferOut(e.token, s.feeCollector, yield);
         emit MilestoneApproved(eId, idx, msg.sender, baseAmt, block.timestamp);
         if (e.status == EscrowStatus.Released) {
             emit EscrowCompleted(eId, e.beneficiary, e.paidAmount);
@@ -102,38 +105,41 @@ contract OrbitWork is EscrowCore {
 
     // ===== Marketplace =====
     function applyToJob(uint256 eId, string calldata cover, uint256 tim) external override validEscrow(eId) nonReentrant whenNotPaused {
-        EscrowData storage e = escrows[eId];
-        require(e.isOpenJob && e.status == EscrowStatus.Pending && !hasApplied[eId][msg.sender], "job");
-        require(escrowApplications[eId].length < MAX_APPLICATIONS, "apps");
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
+        require(e.isOpenJob && e.status == EscrowStatus.Pending && !s.hasApplied[eId][msg.sender], "job");
+        require(s.escrowApplications[eId].length < MAX_APPLICATIONS, "apps");
         require(msg.sender != e.depositor, "depositor");
-        escrowApplications[eId].push(Application({
+        s.escrowApplications[eId].push(Application({
             freelancer: msg.sender, coverLetter: cover, proposedTimeline: tim, appliedAt: block.timestamp,
             exists: true, averageRating: 0, totalRatings: 0
         }));
-        hasApplied[eId][msg.sender] = true;
+        s.hasApplied[eId][msg.sender] = true;
         emit ApplicationSubmitted(eId, msg.sender, cover, tim);
     }
 
     function acceptFreelancer(uint256 eId, address free) external override validEscrow(eId) onlyDepositor(eId) nonReentrant whenNotPaused {
-        EscrowData storage e = escrows[eId];
-        require(e.isOpenJob && e.status == EscrowStatus.Pending && hasApplied[eId][free], "free");
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
+        require(e.isOpenJob && e.status == EscrowStatus.Pending && s.hasApplied[eId][free], "free");
         e.beneficiary = free;
         e.isOpenJob = false;
-        userEscrows[free].push(eId);
+        s.userEscrows[free].push(eId);
         emit FreelancerAccepted(eId, free);
     }
 
     // ===== Admin & Emergency =====
-    function whitelistToken(address t) external onlyOwner { whitelistedTokens[t] = true; emit TokenWhitelisted(t); }
-    function blacklistToken(address t) external onlyOwner { whitelistedTokens[t] = false; emit TokenBlacklisted(t); }
-    function authorizeArbiter(address a) external onlyOwner { authorizedArbiters[a] = true; emit ArbiterAuthorized(a); }
-    function revokeArbiter(address a) external onlyOwner { authorizedArbiters[a] = false; emit ArbiterRevoked(a); }
+    function whitelistToken(address t) external onlyOwner { _getLogicState().whitelistedTokens[t] = true; emit TokenWhitelisted(t); }
+    function blacklistToken(address t) external onlyOwner { _getLogicState().whitelistedTokens[t] = false; emit TokenBlacklisted(t); }
+    function authorizeArbiter(address a) external onlyOwner { _getLogicState().authorizedArbiters[a] = true; emit ArbiterAuthorized(a); }
+    function revokeArbiter(address a) external onlyOwner { _getLogicState().authorizedArbiters[a] = false; emit ArbiterRevoked(a); }
     
     function withdrawFees(address t) external nonReentrant {
-        require(msg.sender == feeCollector || msg.sender == owner(), "auth");
-        uint256 amt = totalFeesByToken[t];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        require(msg.sender == s.feeCollector || msg.sender == owner(), "auth");
+        uint256 amt = s.totalFeesByToken[t];
         require(amt > 0, "noFees");
-        totalFeesByToken[t] = 0;
+        s.totalFeesByToken[t] = 0;
         _transferOut(t, msg.sender, amt);
         emit FeesWithdrawn(t, amt, msg.sender);
     }
@@ -149,8 +155,9 @@ contract OrbitWork is EscrowCore {
         emit UserVerified(u, block.timestamp);
     }
     function revokeUserVerification(address u) external override onlyOwner {
-        selfVerifiedUsers[u] = false;
-        verificationTimestamp[u] = 0;
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        s.selfVerifiedUsers[u] = false;
+        s.verificationTimestamp[u] = 0;
     }
 
     // ===== Views =====
@@ -162,19 +169,20 @@ contract OrbitWork is EscrowCore {
         return OrbitWorkLib.getEscrowSummary(_getLogicState(), eId);
     }
     function getMilestones(uint256 eId) external view override returns (Milestone[] memory) {
-        uint256 c = escrows[eId].milestoneCount;
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        uint256 c = s.escrows[eId].milestoneCount;
         Milestone[] memory l = new Milestone[](c);
-        for (uint256 i = 0; i < c; i++) l[i] = milestones[eId][i];
+        for (uint256 i = 0; i < c; i++) l[i] = s.milestones[eId][i];
         return l;
     }
-    function getUserEscrows(address u) external view override returns (uint256[] memory) { return userEscrows[u]; }
-    function getReputation(address u) external view override returns (uint256) { return reputation[u]; }
-    function getCompletedEscrows(address u) external view override returns (uint256) { return completedEscrows[u]; }
-    function getWithdrawableFees(address t) external view override returns (uint256) { return totalFeesByToken[t]; }
-    function getApplicationCount(uint256 eId) external view override returns (uint256) { return escrowApplications[eId].length; }
-    function hasUserApplied(uint256 eId, address u) external view override returns (bool) { return hasApplied[eId][u]; }
+    function getUserEscrows(address u) external view override returns (uint256[] memory) { return _getLogicState().userEscrows[u]; }
+    function getReputation(address u) external view override returns (uint256) { return _getLogicState().reputation[u]; }
+    function getCompletedEscrows(address u) external view override returns (uint256) { return _getLogicState().completedEscrows[u]; }
+    function getWithdrawableFees(address t) external view override returns (uint256) { return _getLogicState().totalFeesByToken[t]; }
+    function getApplicationCount(uint256 eId) external view override returns (uint256) { return _getLogicState().escrowApplications[eId].length; }
+    function hasUserApplied(uint256 eId, address u) external view override returns (bool) { return _getLogicState().hasApplied[eId][u]; }
     function getApplicationsPage(uint256 eId, uint256 off, uint256 lim) external view override returns (Application[] memory) {
-        Application[] storage all = escrowApplications[eId];
+        Application[] storage all = _getLogicState().escrowApplications[eId];
         uint256 end = off + lim > all.length ? all.length : off + lim;
         Application[] memory r = new Application[](end - off);
         for (uint256 i = 0; i < r.length; i++) r[i] = all[off + i];
@@ -183,20 +191,22 @@ contract OrbitWork is EscrowCore {
 
     // ===== Others =====
     function disputeMilestone(uint256 eId, uint256 idx, string calldata r) external override validEscrow(eId) onlyEscrowParticipant(eId) whenNotPaused {
-        Milestone storage m = milestones[eId][idx];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        Milestone storage m = s.milestones[eId][idx];
         require(m.status == MilestoneStatus.Submitted, "state");
         m.status = MilestoneStatus.Disputed;
         m.disputedAt = block.timestamp; m.disputedBy = msg.sender; m.disputeReason = r;
-        escrows[eId].status = EscrowStatus.Disputed;
+        s.escrows[eId].status = EscrowStatus.Disputed;
         emit MilestoneDisputed(eId, idx, msg.sender, r, block.timestamp);
         emit EscrowUpdated(eId, EscrowStatus.Disputed, block.timestamp);
     }
 
     function resolveDispute(uint256 eId, uint256 idx, uint256 bAmt, string calldata resReason) external override validEscrow(eId) onlyArbiter(eId) whenNotPaused nonReentrant {
-        EscrowData storage e = escrows[eId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
         require(e.status == EscrowStatus.Disputed, "dispute");
-        uint256 refund = OrbitWorkLib.resolveDispute(_getLogicState(), eId, idx, bAmt);
-        milestones[eId][idx].disputeReason = resReason;
+        uint256 refund = OrbitWorkLib.resolveDispute(s, eId, idx, bAmt);
+        s.milestones[eId][idx].disputeReason = resReason;
         if (bAmt > 0) _transferOut(e.token, e.beneficiary, bAmt);
         if (refund > 0) _transferOut(e.token, e.depositor, refund);
         emit DisputeResolved(eId, idx, msg.sender, bAmt, refund, block.timestamp);
@@ -208,18 +218,20 @@ contract OrbitWork is EscrowCore {
     }
 
     function refundEscrow(uint256 eId) external override validEscrow(eId) onlyDepositor(eId) whenNotPaused nonReentrant {
-        require(escrows[eId].status == EscrowStatus.Pending && !escrows[eId].workStarted && block.timestamp < escrows[eId].deadline, "refund");
-        uint256 amt = OrbitWorkLib.refundEscrow(_getLogicState(), eId);
-        _transferOut(escrows[eId].token, msg.sender, amt);
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        require(s.escrows[eId].status == EscrowStatus.Pending && !s.escrows[eId].workStarted && block.timestamp < s.escrows[eId].deadline, "refund");
+        uint256 amt = OrbitWorkLib.refundEscrow(s, eId);
+        _transferOut(s.escrows[eId].token, msg.sender, amt);
         emit FundsRefunded(eId, msg.sender, amt);
         emit EscrowUpdated(eId, EscrowStatus.Refunded, block.timestamp);
     }
 
     function emergencyRefundAfterDeadline(uint256 eId) external override validEscrow(eId) onlyDepositor(eId) whenNotPaused nonReentrant {
-        EscrowData storage e = escrows[eId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
         require(block.timestamp > e.deadline + EMERGENCY_REFUND_DELAY, "delay");
         require(e.status != EscrowStatus.Released && e.status != EscrowStatus.Refunded, "status");
-        uint256 amt = OrbitWorkLib.emergencyRefundAfterDeadline(_getLogicState(), eId);
+        uint256 amt = OrbitWorkLib.emergencyRefundAfterDeadline(s, eId);
         _transferOut(e.token, msg.sender, amt);
         emit EmergencyRefundExecuted(eId, msg.sender, amt);
         emit EscrowUpdated(eId, EscrowStatus.Expired, block.timestamp);
@@ -238,7 +250,8 @@ contract OrbitWork is EscrowCore {
         onlyDepositor(eId)
         whenNotPaused
     {
-        EscrowData storage e = escrows[eId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
         require(block.timestamp > e.deadline, "deadline not passed");
         require(
             e.status == EscrowStatus.Pending || e.status == EscrowStatus.InProgress,
@@ -249,7 +262,7 @@ contract OrbitWork is EscrowCore {
         // use the normal disputeMilestone() flow instead.
         bool anySubmitted = false;
         for (uint256 i = 0; i < e.milestoneCount; i++) {
-            if (milestones[eId][i].status != MilestoneStatus.NotStarted) {
+            if (s.milestones[eId][i].status != MilestoneStatus.NotStarted) {
                 anySubmitted = true;
                 break;
             }
@@ -257,10 +270,10 @@ contract OrbitWork is EscrowCore {
         require(!anySubmitted, "use disputeMilestone(): work was submitted");
 
         // Mark first milestone as Disputed so resolveDispute() can act on it
-        milestones[eId][0].status = MilestoneStatus.Disputed;
-        milestones[eId][0].disputedAt = block.timestamp;
-        milestones[eId][0].disputedBy = msg.sender;
-        milestones[eId][0].disputeReason = "Deadline passed with no work submitted";
+        s.milestones[eId][0].status = MilestoneStatus.Disputed;
+        s.milestones[eId][0].disputedAt = block.timestamp;
+        s.milestones[eId][0].disputedBy = msg.sender;
+        s.milestones[eId][0].disputeReason = "Deadline passed with no work submitted";
 
         e.status = EscrowStatus.Disputed;
 
@@ -270,7 +283,8 @@ contract OrbitWork is EscrowCore {
 
     function extendDeadline(uint256 eId, uint256 ext) external override validEscrow(eId) onlyDepositor(eId) whenNotPaused {
         require(ext > 0 && ext <= 30 days, "ext");
-        EscrowData storage e = escrows[eId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[eId];
         require(e.status == EscrowStatus.InProgress || e.status == EscrowStatus.Pending, "status");
         e.deadline += ext; emit DeadlineExtended(eId, e.deadline);
     }
@@ -287,7 +301,7 @@ contract OrbitWork is EscrowCore {
         return (er.rater, er.freelancer, er.rating, er.ratedAt, er.exists);
     }
     function getBadgeTier(address f) external view override returns (uint256) {
-        uint256 c = completedEscrows[f];
+        uint256 c = _getLogicState().completedEscrows[f];
         if (c >= 20) return 2; if (c >= 5) return 1; return 0;
     }
 
@@ -301,6 +315,6 @@ contract OrbitWork is EscrowCore {
         reactiveCallbackSender = s;
         emit ReactiveCallbackSenderUpdated(s);
     }
-    function pauseJobCreation() external onlyOwner { jobCreationPaused = true; emit JobCreationPaused(); }
-    function unpauseJobCreation() external onlyOwner { jobCreationPaused = false; emit JobCreationUnpaused(); }
+    function pauseJobCreation() external onlyOwner { _getLogicState().jobCreationPaused = true; emit JobCreationPaused(); }
+    function unpauseJobCreation() external onlyOwner { _getLogicState().jobCreationPaused = false; emit JobCreationUnpaused(); }
 }

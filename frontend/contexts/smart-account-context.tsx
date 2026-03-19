@@ -209,8 +209,12 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
         console.log("From address:", fromAddress);
 
         // Only handle delegation flow for OrbitWork contract where we have the ABI
-        if (to.toLowerCase() === CONTRACTS.ORBIT_WORK_ESCROW.toLowerCase()) {
-          console.log("Processing OrbitWork contract call");
+        // NOTE: Delegation is currently a simulation in the frontend. 
+        // We will force fallback to real transactions to ensure data hits the blockchain.
+        const USE_MOCK_DELEGATION = false; 
+
+        if (USE_MOCK_DELEGATION && to.toLowerCase() === CONTRACTS.ORBIT_WORK_ESCROW.toLowerCase()) {
+          console.log("Processing OrbitWork contract call (Simulation Mode)");
           const iface = new ethers.Interface(ORBIT_WORK_ABI);
           const parsed = iface.parseTransaction({ data });
           if (!parsed) {
@@ -266,7 +270,7 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
           const delegationTxHash = await Promise.race([
             delegationPromise,
             timeoutPromise,
-          ]);
+          ]) as string;
 
           // For simulated delegation, create a realistic transaction response
           txResponse = {
@@ -280,13 +284,17 @@ export function SmartAccountProvider({ children }: { children: ReactNode }) {
               }),
           };
         } else {
-          // Fallback to direct send when we cannot decode; this may prompt MetaMask
+          // Force real on-chain transaction
+          console.log("Executing transaction via real Signer (Gasless via Paymaster if supported)");
+          
+          // NOTE: On Unichain/Sepolia, to actually be gasless, we'd normally use a bundler (ERC-4337).
+          // For now, we use the signer directly which will prompt the user and use their funds if Paymaster isn't configured at the RPC level.
           const directTx = await signer.sendTransaction({
             to,
             data,
-            value: ethers.parseEther(value),
+            value: ethers.parseEther(value || "0"),
             gasLimit: gasEstimate,
-            gasPrice,
+            // gasPrice, // Let the provider handle dynamic gas pricing for better reliability
           });
           txResponse = directTx;
         }

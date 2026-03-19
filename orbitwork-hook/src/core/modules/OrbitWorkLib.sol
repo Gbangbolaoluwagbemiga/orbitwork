@@ -25,22 +25,38 @@ library OrbitWorkLib {
     }
 
     struct EscrowState {
-        uint256 nextEscrowId; // slot 0 derived from EscrowCore
-        address feeCollector;
+        // --- Core Protocol State ---
+        uint256 nextEscrowId; 
+        address orbitworkToken;
         uint256 platformFeeBP;
+        address feeCollector;
+        bool jobCreationPaused;
+
+        // --- Mappings ---
         mapping(uint256 => IOrbitWork.EscrowData) escrows;
         mapping(uint256 => mapping(uint256 => IOrbitWork.Milestone)) milestones;
         mapping(address => uint256[]) userEscrows;
+        mapping(address => bool) authorizedArbiters;
+        mapping(address => bool) whitelistedTokens;
         mapping(address => uint256) escrowedAmount;
         mapping(address => uint256) totalFeesByToken;
-        IEscrowHook escrowHook;
-        bool liquidEscrowEnabled;
-        mapping(uint256 => IEscrowHook.PoolKey) escrowPoolKeys;
-        mapping(uint256 => IEscrowHook.ModifyLiquidityParams) escrowPoolParams;
+
+        // --- Marketplace & Reputation ---
+        mapping(uint256 => IOrbitWork.Application[]) escrowApplications;
+        mapping(uint256 => mapping(address => bool)) hasApplied;
         mapping(address => uint256) reputation;
         mapping(address => uint256) completedEscrows;
         mapping(address => bool) selfVerifiedUsers;
         mapping(address => uint256) verificationTimestamp;
+
+        // --- Integrations & Automation ---
+        IEscrowHook escrowHook;
+        bool liquidEscrowEnabled;
+        mapping(uint256 => IEscrowHook.PoolKey) escrowPoolKeys;
+        mapping(uint256 => IEscrowHook.ModifyLiquidityParams) escrowPoolParams;
+        address reactiveCallbackSender;
+
+        // --- Ratings ---
         mapping(address => FreelancerRating) freelancerRatings;
         mapping(uint256 => EscrowRating) escrowRatings;
         mapping(address => uint256[]) freelancerRatedEscrows;

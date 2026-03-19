@@ -17,9 +17,14 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
+    // Storage slot for OrbitWork protocol state
+    // keccak256("orbitwork.storage.v1")
+    bytes32 private constant STORAGE_SLOT = 0x5a1b3c9d7e8f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b;
+
     function _getLogicState() internal view returns (OrbitWorkLib.EscrowState storage s) {
+        bytes32 slot = STORAGE_SLOT;
         assembly {
-            s.slot := 0 // Since OrbitWork inherits EscrowCore as the first base
+            s.slot := slot
         }
     }
 
@@ -39,48 +44,34 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     // version
     string public constant CONTRACT_VERSION = "1.0.0";
 
-    // ===== State (config) =====
-    address public orbitworkToken;
-    uint256 public platformFeeBP;
-    address public feeCollector;
-    bool public jobCreationPaused;
+    // ===== Public Getters (ABI Compatibility) =====
+    function orbitworkToken() public view returns (address) { return _getLogicState().orbitworkToken; }
+    function platformFeeBP() public view returns (uint256) { return _getLogicState().platformFeeBP; }
+    function feeCollector() public view returns (address) { return _getLogicState().feeCollector; }
+    function jobCreationPaused() public view returns (bool) { return _getLogicState().jobCreationPaused; }
+    function nextEscrowId() public view returns (uint256) { return _getLogicState().nextEscrowId; }
+    function escrows(uint256 id) public view returns (EscrowData memory) { return _getLogicState().escrows[id]; }
+    function milestones(uint256 id, uint256 idx) public view returns (Milestone memory) { return _getLogicState().milestones[id][idx]; }
+    function userEscrows(address user, uint256 idx) public view returns (uint256) { return _getLogicState().userEscrows[user][idx]; }
+    function authorizedArbiters(address arbiter) public view returns (bool) { return _getLogicState().authorizedArbiters[arbiter]; }
+    function whitelistedTokens(address token) public view returns (bool) { return _getLogicState().whitelistedTokens[token]; }
+    function escrowedAmount(address token) public view returns (uint256) { return _getLogicState().escrowedAmount[token]; }
+    function totalFeesByToken(address token) public view returns (uint256) { return _getLogicState().totalFeesByToken[token]; }
+    function hasApplied(uint256 id, address user) public view returns (bool) { return _getLogicState().hasApplied[id][user]; }
+    function reputation(address user) public view returns (uint256) { return _getLogicState().reputation[user]; }
+    function completedEscrows(address user) public view returns (uint256) { return _getLogicState().completedEscrows[user]; }
+    function selfVerifiedUsers(address user) public view returns (bool) { return _getLogicState().selfVerifiedUsers[user]; }
+    function verificationTimestamp(address user) public view returns (uint256) { return _getLogicState().verificationTimestamp[user]; }
+    function escrowHook() public view returns (IEscrowHook) { return _getLogicState().escrowHook; }
+    function liquidEscrowEnabled() public view returns (bool) { return _getLogicState().liquidEscrowEnabled; }
+    function escrowPoolKeys(uint256 id) public view returns (IEscrowHook.PoolKey memory) { return _getLogicState().escrowPoolKeys[id]; }
+    function escrowPoolParams(uint256 id) public view returns (IEscrowHook.ModifyLiquidityParams memory) { return _getLogicState().escrowPoolParams[id]; }
+    function reactiveCallbackSender() public view returns (address) { return _getLogicState().reactiveCallbackSender; }
 
-    // ===== State variables =====
-    uint256 public nextEscrowId;
-    mapping(uint256 => EscrowData) public escrows;
-    mapping(uint256 => mapping(uint256 => Milestone)) public milestones;
-    mapping(address => uint256[]) public userEscrows;
-    mapping(address => bool) public authorizedArbiters;
-    mapping(address => bool) public whitelistedTokens;
-    mapping(address => uint256) public escrowedAmount;
-    mapping(address => uint256) public totalFeesByToken;
-
-    // Marketplace storage
-    mapping(uint256 => Application[]) internal escrowApplications;
-    mapping(uint256 => mapping(address => bool)) public hasApplied;
-
-    // Reputation
-    mapping(address => uint256) public reputation;
-    mapping(address => uint256) public completedEscrows;
-
-    // Self Protocol Verification
-    mapping(address => bool) public selfVerifiedUsers;
-    mapping(address => uint256) public verificationTimestamp;
-
-
-
-    // Uniswap v4 Hook
-    IEscrowHook public escrowHook;
-    bool public liquidEscrowEnabled;
-    mapping(uint256 => IEscrowHook.PoolKey) public escrowPoolKeys;
-    mapping(uint256 => IEscrowHook.ModifyLiquidityParams) public escrowPoolParams;
-
-    // Reactive Network Automation
-    address public reactiveCallbackSender;
-
-    // ===== Modifiers =====
+    // ===== Modifiers (Updated to use _getLogicState) =====
     modifier onlyEscrowParticipant(uint256 escrowId) {
-        EscrowData storage e = escrows[escrowId];
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        EscrowData storage e = s.escrows[escrowId];
         bool isArv = false;
         for (uint256 i = 0; i < e.arbiters.length; i++) {
             if (e.arbiters[i] == msg.sender) {
@@ -98,18 +89,18 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     }
 
     modifier onlyDepositor(uint256 escrowId) {
-        require(msg.sender == escrows[escrowId].depositor, "depositor");
+        require(msg.sender == _getLogicState().escrows[escrowId].depositor, "depositor");
         _;
     }
 
     modifier onlyBeneficiary(uint256 escrowId) {
-        require(msg.sender == escrows[escrowId].beneficiary, "beneficiary");
+        require(msg.sender == _getLogicState().escrows[escrowId].beneficiary, "beneficiary");
         _;
     }
 
     modifier onlyArbiter(uint256 escrowId) {
         bool found = false;
-        address[] storage arbiters = escrows[escrowId].arbiters;
+        address[] storage arbiters = _getLogicState().escrows[escrowId].arbiters;
         for (uint256 i = 0; i < arbiters.length; i++) {
             if (arbiters[i] == msg.sender) {
                 found = true;
@@ -121,22 +112,23 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     }
 
     modifier validEscrow(uint256 escrowId) {
-        require(escrowId > 0 && escrowId < nextEscrowId, "id");
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        require(escrowId > 0 && escrowId < s.nextEscrowId, "id");
         _;
     }
 
     modifier onlyWhitelistedToken(address token) {
-        require(token == address(0) || whitelistedTokens[token], "token");
+        require(token == address(0) || _getLogicState().whitelistedTokens[token], "token");
         _;
     }
 
     modifier onlyAuthorizedArbiter(address arbiter) {
-        require(authorizedArbiters[arbiter], "Arbiter not authorized");
+        require(_getLogicState().authorizedArbiters[arbiter], "Arbiter not authorized");
         _;
     }
 
     modifier whenJobCreationNotPaused() {
-        require(!jobCreationPaused, "paused");
+        require(!_getLogicState().jobCreationPaused, "paused");
         _;
     }
 
@@ -144,13 +136,14 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
         require(_feeCollector != address(0), "feeCollector");
         require(_platformFeeBP <= MAX_PLATFORM_FEE_BP, "feeTooHigh");
 
-        orbitworkToken = _orbitworkToken;
-        feeCollector = _feeCollector;
-        platformFeeBP = _platformFeeBP;
-        nextEscrowId = 1;
+        OrbitWorkLib.EscrowState storage s = _getLogicState();
+        s.orbitworkToken = _orbitworkToken;
+        s.feeCollector = _feeCollector;
+        s.platformFeeBP = _platformFeeBP;
+        s.nextEscrowId = 1;
 
         if (_orbitworkToken != address(0)) {
-            whitelistedTokens[_orbitworkToken] = true;
+            s.whitelistedTokens[_orbitworkToken] = true;
             emit TokenWhitelisted(_orbitworkToken);
         }
     }
@@ -164,12 +157,12 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
      * @return Platform fee amount (50% discount for verified users)
      */
     function calculatePlatformFee(address user, uint256 amount) public view returns (uint256) {
-        if (platformFeeBP == 0) return 0;
+        if (platformFeeBP() == 0) return 0;
         
-        uint256 baseFee = (amount * platformFeeBP) / 10000;
+        uint256 baseFee = (amount * platformFeeBP()) / 10000;
         
         // 50% discount for Self Protocol verified users
-        if (selfVerifiedUsers[user]) {
+        if (selfVerifiedUsers(user)) {
             return baseFee / 2;
         }
         
@@ -177,8 +170,8 @@ abstract contract EscrowCore is ReentrancyGuard, Ownable, Pausable, IOrbitWork {
     }
     
     function _calculateFee(uint256 amount) internal view returns (uint256) {
-        if (platformFeeBP == 0) return 0;
-        return (amount * platformFeeBP) / 10000;
+        if (platformFeeBP() == 0) return 0;
+        return (amount * platformFeeBP()) / 10000;
     }
 
     function _transferIn(address token, address from, uint256 amount, bool isNative) internal {

@@ -915,10 +915,10 @@ export default function CreateEscrowPage() {
         }
 
         // Calculate total amount using actual token decimals
-        const totalAmountInWei = BigInt(
-          Math.floor(
-            Number.parseFloat(formData.totalBudget) * 10 ** tokenDecimals
-          )
+        // Use ethers.parseUnits for better precision with large numbers
+        const totalAmountInWei = ethers.parseUnits(
+          formData.totalBudget || "0",
+          tokenDecimals
         ).toString();
 
         // Check token balance first
@@ -1083,9 +1083,9 @@ export default function CreateEscrowPage() {
             amountFormatted: `${(Number(totalAmountWithFee) / 10 ** tokenDecimals).toFixed(4)} ${tokenSymbol}`
           });
 
-          // Add a tiny buffer (0.1%) for rounding safety during contract transferFrom
-          const approvalAmount = (totalAmountWithFee * BigInt(1001) / BigInt(1000)).toString();
-          console.log('📝 Approval amount (with safety buffer):', approvalAmount);
+          // Use exact amount (no buffer needed for static escrows)
+          const approvalAmount = totalAmountWithFee.toString();
+          console.log('📝 Approval amount (total with fees):', approvalAmount);
 
           const approvalTx = await tokenContract.send(
             "approve",
@@ -1138,8 +1138,11 @@ export default function CreateEscrowPage() {
 
           toast({
             title: "Token approved",
-            description: "Token approval confirmed. Creating escrow...",
+            description: "Token approval confirmed. Preparing escrow creation...",
           });
+
+          // Add a small delay to allow nonce synchronization in the wallet provider
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         } catch (approvalError: any) {
           console.error("❌ Approval error:", approvalError);
           throw new Error(
@@ -1167,9 +1170,7 @@ export default function CreateEscrowPage() {
       if (isNativeToken) {
         // Use createEscrowNative for native tokens
         console.log("Creating native token escrow (no whitelist check needed)");
-        const budgetInWei = BigInt(
-          Math.floor(Number.parseFloat(formData.totalBudget) * 10 ** 18)
-        );
+        const budgetInWei = ethers.parseEther(formData.totalBudget || "0");
         const feeInWei = (budgetInWei * BigInt(platformFeeBP)) / BigInt(10000);
         const totalWithFeeInWei = budgetInWei + feeInWei;
         const totalAmountInWei = totalWithFeeInWei.toString();
@@ -1276,9 +1277,9 @@ export default function CreateEscrowPage() {
           );
         }
 
-        // Convert milestone amounts to wei (BigInt)
+        // Convert milestone amounts to wei using ethers.parseEther for precision
         const milestoneAmountsInWei = formData.milestones.map((m) =>
-          BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** 18)).toString()
+          ethers.parseEther(m.amount || "0").toString()
         );
 
         const arbiters = ["0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41"]; // Default platform arbiter
@@ -1395,8 +1396,9 @@ export default function CreateEscrowPage() {
         const requiredConfirmations = 1;
 
         // Convert milestone amounts to wei for ERC20 tokens
+        // Convert milestone amounts to wei for ERC20 tokens using ethers.parseUnits for precision
         const milestoneAmountsInWei = formData.milestones.map((m) =>
-          BigInt(Math.floor(Number.parseFloat(m.amount) * 10 ** tokenDecimals)).toString()
+          ethers.parseUnits(m.amount || "0", tokenDecimals).toString()
         );
 
         // Convert duration from days to seconds
@@ -1446,6 +1448,8 @@ export default function CreateEscrowPage() {
             formData.projectDescription // projectDescription parameter
           );
 
+          console.log("✅ ERC20 escrow transaction hash obtained:", txHash);
+
           toast({
             title: "Transaction Submitted",
             description:
@@ -1453,6 +1457,8 @@ export default function CreateEscrowPage() {
           });
         }
       }
+
+      console.log("⏳ Starting receipt polling for txHash:", txHash);
 
       // Wait for transaction confirmation
       // Note: Success toast is already shown in Smart Account/regular transaction logic above
@@ -1502,9 +1508,7 @@ export default function CreateEscrowPage() {
               : "Your escrow has been created successfully with no gas fees! The freelancer can now start working. Redirecting...",
           });
 
-          setTimeout(() => {
-            router.push(isOpenJob ? "/jobs" : "/dashboard");
-          }, 3000);
+          router.replace(isOpenJob ? "/jobs" : "/dashboard");
         } else {
           throw new Error("Transaction failed on blockchain");
         }
@@ -1549,9 +1553,7 @@ export default function CreateEscrowPage() {
               : "Your escrow has been successfully created. Redirecting...",
           });
 
-          setTimeout(() => {
-            router.push(isOpenJob ? "/jobs" : "/dashboard");
-          }, 3000);
+          router.replace(isOpenJob ? "/jobs" : "/dashboard");
         } else {
           // Transaction failed
           throw new Error("Transaction failed on blockchain");

@@ -634,6 +634,7 @@ export default function DashboardPage() {
       // Get total number of escrows
       const totalEscrows = await contract.call("nextEscrowId");
       const escrowCount = Number(totalEscrows);
+      console.log("🔍 [Dashboard] nextEscrowId =", escrowCount, "| wallet =", wallet.address);
 
       const userEscrows: Escrow[] = [];
       const decimalCache: Record<string, number> = {
@@ -652,24 +653,28 @@ export default function DashboardPage() {
           const batchPromises = [];
           for (let j = i; j < end; j++) {
             batchPromises.push(
-              contract.call("getEscrowSummary", j).then((summary: any) => ({
-                id: j,
-                summary
-              })).catch(() => null)
+              contract.call("getEscrowSummary", j).then((summary: any) => {
+                console.log(`📦 [Dashboard] Escrow #${j} raw summary:`, summary);
+                console.log(`  [${j}] depositor:`, summary[0], "| beneficiary:", summary[1], "| status:", Number(summary[3]), "| totalAmount:", summary[4]?.toString(), "| token:", summary[7], "| isOpenJob:", summary[12], "| title:", summary[13]);
+                return { id: j, summary };
+              }).catch((err: any) => { console.error(`❌ [Dashboard] Failed escrow #${j}:`, err?.message); return null; })
             );
           }
           const results = await Promise.all(batchPromises);
           summaries.push(...results.filter((r: any) => r !== null));
         }
+        console.log("📋 [Dashboard] Total summaries fetched:", summaries.length, "| wallet:", wallet.address);
 
         for (const { id, summary: escrowSummary } of summaries as any[]) {
           try {
             // Check if user is involved in this escrow
             // getEscrowSummary returns indexed properties
             const isPayer =
-              escrowSummary[0].toLowerCase() === wallet.address?.toLowerCase();
+              escrowSummary[0]?.toLowerCase() === wallet.address?.toLowerCase();
             const isBeneficiary =
-              escrowSummary[1].toLowerCase() === wallet.address?.toLowerCase();
+              escrowSummary[1]?.toLowerCase() === wallet.address?.toLowerCase();
+
+            console.log(`🔎 [Dashboard] Escrow #${id} → depositor: ${escrowSummary[0]} | beneficiary: ${escrowSummary[1]} | wallet: ${wallet.address} | isPayer: ${isPayer} | isBeneficiary: ${isBeneficiary} | isOpenJob: ${escrowSummary[12]}`);
 
             // Show escrows for both clients and freelancers, but with different functionality
             if (isPayer || isBeneficiary) {

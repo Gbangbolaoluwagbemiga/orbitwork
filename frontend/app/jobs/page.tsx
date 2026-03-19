@@ -123,6 +123,7 @@ export default function JobsPage() {
       let ongoingCount = 0;
 
       // Check all escrows to count ongoing projects for this user (both as client and freelancer)
+      // Check if there are any escrows created yet (nextEscrowId > 1 means at least one escrow exists)
       if (escrowCount > 1) {
         for (let i = 1; i < escrowCount; i++) {
           try {
@@ -238,17 +239,30 @@ export default function JobsPage() {
         for (let i = 1; i < escrowCount; i++) {
           try {
             const escrowSummary = await contract.call("getEscrowSummary", i);
+            console.log(`📦 [Jobs] Escrow #${i}:`, {
+              depositor: escrowSummary[0],
+              beneficiary: escrowSummary[1],
+              status: Number(escrowSummary[3]),
+              totalAmount: escrowSummary[4]?.toString(),
+              token: escrowSummary[7],
+              isOpenJob: escrowSummary[12],
+              title: escrowSummary[13],
+              description: escrowSummary[14],
+            });
 
             // Check if this is an open job (beneficiary is zero address)
-            // getEscrowSummary returns indexed properties: [depositor, beneficiary, arbiters, status, totalAmount, paidAmount, remaining, token, deadline, workStarted, createdAt, milestoneCount, isOpenJob, projectTitle, projectDescription]
             const isOpenJob =
-              escrowSummary[1] === "0x0000000000000000000000000000000000000000";
+              escrowSummary[1]?.toLowerCase() === "0x0000000000000000000000000000000000000000" ||
+              escrowSummary[12] === true; // fallback: use the isOpenJob flag from contract
+
+            console.log(`  [Jobs] #${i} isOpenJob:`, isOpenJob, "| beneficiary:", escrowSummary[1]);
 
             if (isOpenJob) {
               // Check if current user is the job creator (should not be able to apply to own job)
               const isJobCreator =
-                escrowSummary[0].toLowerCase() ===
+                escrowSummary[0]?.toLowerCase() ===
                 wallet.address?.toLowerCase();
+              console.log(`  [Jobs] #${i} isJobCreator:`, isJobCreator, "| depositor:", escrowSummary[0], "| wallet:", wallet.address);
 
               // Check if current user has already applied to this job
               let userHasApplied = false;
